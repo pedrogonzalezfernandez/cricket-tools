@@ -1,0 +1,120 @@
+Build a real-time multi-user web app with two entry roles: Conductor and Player. Use a simple stack that runs well on Replit:
+Backend: Node.js + Express
+Realtime: Socket.IO (WebSockets)
+Frontend: Vanilla HTML/CSS/JS
+Audio: Tone.js (synth on player side)
+Visualization: HTML Canvas (or SVG) on player side
+Core concept
+Users open the same web page. On landing, they must choose:
+Enter as Conductor
+Enter as Player
+Players receive an audio + visual score controlled live by the conductor with minimal perceived delay.
+App rules
+Players must enter a name before joining.
+There can be multiple conductors, but they all control the same global state (any conductor changing a value updates everyone).
+The conductor sees a live list of connected players (by name + socket id; do NOT show IP).
+If no conductor is connected, all players must be in a Waiting Room screen (no score running).
+If the last conductor disconnects, all players immediately return to the Waiting Room.
+If a player disconnects, they disappear from the conductor UI and their controls disappear.
+If a player connects while running, they appear immediately and receive current parameters.
+Scenes (v1 implements only Scene 1)
+There will be multiple scenes in the future, but implement:
+Scene 1: “Audio Score”
+The conductor UI includes:
+A scene selector dropdown (only one option for now: “Audio Score”).
+For each connected player, show a control panel with:
+Pitch slider (controls the note that player hears AND the note label they see)
+Speed/Interval slider in milliseconds (controls time between note events)
+Defaults: when a scene starts and conductor hasn’t changed anything yet:
+all players start with the same pitch and same interval (choose sensible defaults like A4 (69 MIDI) and 1000ms).
+Scene 1 Player Experience (Audio Score)
+When the scene is active (and at least one conductor is connected), each player sees:
+Visual score
+A large circle like a clock face.
+A rotating “hand/line” that goes around continuously.
+At the top (12 o’clock) there is a “trigger point” (a small circle/ball).
+Each time the rotating hand reaches 12 o’clock, it triggers a note event:
+The trigger ball briefly pulses bigger.
+The synth plays the note.
+Show the note name prominently (e.g., “D4”), derived from pitch.
+Audio score
+Use a simple synth (Tone.Synth is fine) with an ADSR envelope (attack/decay/sustain/release).
+On each trigger event, play the pitch for a short duration (e.g., 150–300ms or based on interval).
+Pitch comes from the conductor per player.
+Interval comes from the conductor per player.
+Minimal delay requirement
+Implement a basic time-sync approach so triggers feel aligned with the conductor’s changes:
+Server sends updates immediately via Socket.IO.
+Clients schedule events using Tone.Transport or a precise timer.
+Add a lightweight “clock sync”:
+On connect, client pings server (ping timestamp), server responds with server time, client estimates offset.
+Use that offset so the server can broadcast a “start time” for the current cycle and clients can align the phase of the rotating hand.
+Don’t over-engineer: this is not hard sync across players, but it should feel responsive and consistent.
+Waiting Room behavior
+Player flow:
+Landing → choose Player
+Enter name → join
+If no conductor connected: show Waiting Room (“Waiting for conductor…”)
+When a conductor appears: automatically switch to Scene UI (Audio Score) and start running
+If conductor disappears (last one disconnects): immediately return to Waiting Room and stop audio/animation
+Conductor flow:
+Landing → choose Conductor
+Enter conductor dashboard immediately
+Shows:
+number of connected players
+list of players (name + socket id)
+scene selector
+per-player sliders (pitch + interval)
+Changing any slider updates that specific player immediately (audio + label + tempo)
+Data model (server)
+Maintain in memory (no database needed):
+players: { socketId: { name, pitch, interval } }
+conductorCount
+currentScene (string, default “audioScore”)
+defaults: { pitch, interval }
+Rules:
+When a player connects: assign defaults unless current state for that player exists.
+When a conductor connects/disconnects: update conductorCount; broadcast “conductorPresent” boolean.
+On any change: broadcast updated state to relevant clients.
+Socket.IO events (suggested)
+Server ↔ Client:
+joinPlayer({name}) → server stores player, returns playerState
+joinConductor() → server increments count, returns fullState
+stateUpdate(fullState) → for conductor dashboards
+playerUpdate({pitch, interval, scene, phaseStartServerTime}) → to individual player
+conductorPresence({present: boolean}) → to all players
+setScene({scene}) from conductor → server updates + broadcast
+setPlayerPitch({playerId, pitch}) from conductor → server updates + emit to that player + update all conductors
+setPlayerInterval({playerId, interval}) from conductor → same
+syncPing({clientTime}) ↔ syncPong({clientTime, serverTime}) to compute offset
+UI requirements
+Landing page:
+Two buttons: “Enter as Conductor”, “Enter as Player”
+Player page:
+Name entry form
+Waiting Room view
+Scene view with:
+Canvas circle animation
+Note label
+Optional small text: “Interval: X ms”
+Conductor page:
+Scene selector dropdown
+Players list with per-player controls:
+Pitch slider: MIDI 36–84 (or 48–72), display computed note name next to it
+Interval slider: 50–3000 ms
+Real-time updates: if another conductor moves a slider, all conductor UIs reflect it.
+Implementation details
+Use one Express server serving static files from /public.
+Put client scripts in /public/js/.
+Keep code clean and commented.
+Provide a README with:
+how to run
+how to open two tabs (conductor + player) to test
+limitations (browser audio autoplay requires user gesture: player must click “Start” once)
+Acceptance checklist
+Players cannot see the score unless a conductor is present.
+Player note + tempo updates live when conductor moves sliders.
+Conductor sees players appear/disappear in real-time.
+New player joining mid-session immediately starts with the current scene and parameters.
+When last conductor disconnects, all players stop and return to Waiting Room.
+Audio + animation run smoothly on player side.
