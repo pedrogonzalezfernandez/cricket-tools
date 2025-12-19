@@ -11,7 +11,7 @@ const defaults = {
   pitch: 69, // A4 MIDI note
   interval: 1000, // 1 second
 };
-let phaseStartServerTime = Date.now();
+let globalPhaseStartServerTime = Date.now();
 
 // Get full state for conductors
 function getFullState(): AppState {
@@ -20,7 +20,7 @@ function getFullState(): AppState {
     conductorCount,
     currentScene,
     defaults,
-    phaseStartServerTime,
+    phaseStartServerTime: globalPhaseStartServerTime,
   };
 }
 
@@ -64,12 +64,15 @@ export async function registerRoutes(
       playerSockets.add(socket.id);
       socket.join("players"); // Join players room for broadcast
       
+      const now = Date.now();
+      
       // Create player state with defaults
       players[socket.id] = {
         socketId: socket.id,
         name: data.name.slice(0, 50),
         pitch: defaults.pitch,
         interval: defaults.interval,
+        phaseStartServerTime: now,
       };
 
       // Send player their initial state
@@ -78,7 +81,7 @@ export async function registerRoutes(
         interval: players[socket.id].interval,
         conductorPresent: hasConductor(),
         scene: currentScene,
-        phaseStartServerTime,
+        phaseStartServerTime: players[socket.id].phaseStartServerTime,
       });
 
       // Update all conductors
@@ -98,7 +101,7 @@ export async function registerRoutes(
 
       // Notify all players that a conductor is now present
       if (conductorCount === 1) {
-        phaseStartServerTime = Date.now();
+        globalPhaseStartServerTime = Date.now();
         io.to("players").emit("conductorPresence", { present: true });
         
         // Send current state to all players
@@ -108,7 +111,7 @@ export async function registerRoutes(
             pitch: player.pitch,
             interval: player.interval,
             scene: currentScene,
-            phaseStartServerTime,
+            phaseStartServerTime: player.phaseStartServerTime,
           });
         });
       }
@@ -128,12 +131,12 @@ export async function registerRoutes(
 
       players[data.playerId].pitch = data.pitch;
 
-      // Notify the specific player
+      // Notify the specific player (pitch change doesn't affect phase)
       io.to(data.playerId).emit("playerUpdate", {
         pitch: players[data.playerId].pitch,
         interval: players[data.playerId].interval,
         scene: currentScene,
-        phaseStartServerTime,
+        phaseStartServerTime: players[data.playerId].phaseStartServerTime,
       });
 
       // Update all conductors
@@ -147,17 +150,28 @@ export async function registerRoutes(
       if (data.interval < 50 || data.interval > 3000) return;
       if (!players[data.playerId]) return;
 
-      players[data.playerId].interval = data.interval;
+      const player = players[data.playerId];
+      const now = Date.now();
+      const oldInterval = player.interval;
+      const newInterval = data.interval;
       
-      // Reset phase when interval changes for smoother sync
-      phaseStartServerTime = Date.now();
+      // Calculate current phase position (0 to 1)
+      const elapsed = now - player.phaseStartServerTime;
+      const currentPhase = ((elapsed % oldInterval) + oldInterval) % oldInterval / oldInterval;
+      
+      // Calculate new phaseStartServerTime to preserve phase position
+      // newPhaseStart = now - (currentPhase * newInterval)
+      const newPhaseStart = now - (currentPhase * newInterval);
+      
+      player.interval = newInterval;
+      player.phaseStartServerTime = newPhaseStart;
 
-      // Notify the specific player
+      // Notify the specific player with preserved phase
       io.to(data.playerId).emit("playerUpdate", {
-        pitch: players[data.playerId].pitch,
-        interval: players[data.playerId].interval,
+        pitch: player.pitch,
+        interval: player.interval,
         scene: currentScene,
-        phaseStartServerTime,
+        phaseStartServerTime: player.phaseStartServerTime,
       });
 
       // Update all conductors
@@ -170,7 +184,13 @@ export async function registerRoutes(
       if (!data.scene || typeof data.scene !== "string") return;
 
       currentScene = data.scene;
-      phaseStartServerTime = Date.now();
+      const now = Date.now();
+      globalPhaseStartServerTime = now;
+      
+      // Reset all player phases when scene changes
+      Object.keys(players).forEach((playerId) => {
+        players[playerId].phaseStartServerTime = now;
+      });
 
       // Notify all players
       Object.keys(players).forEach((playerId) => {
@@ -179,7 +199,7 @@ export async function registerRoutes(
           pitch: player.pitch,
           interval: player.interval,
           scene: currentScene,
-          phaseStartServerTime,
+          phaseStartServerTime: player.phaseStartServerTime,
         });
       });
 

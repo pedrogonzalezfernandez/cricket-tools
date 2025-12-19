@@ -14,6 +14,7 @@ export default function Player() {
   const [name, setName] = useState("");
   const [hasJoined, setHasJoined] = useState(false);
   const [audioStarted, setAudioStarted] = useState(false);
+  const [audioSuspended, setAudioSuspended] = useState(false);
   const { socket, isConnected, getServerTime } = useSocket();
   const { conductorPresent, playerUpdate, joinAsPlayer, isJoined } = usePlayerSocket(socket);
 
@@ -43,17 +44,60 @@ export default function Player() {
       },
     }).toDestination();
     setAudioStarted(true);
+    setAudioSuspended(false);
   };
+
+  const resumeAudio = async () => {
+    if (Tone.getContext().state === "suspended") {
+      await Tone.start();
+    }
+    setAudioSuspended(false);
+  };
+
+  // Handle visibility change to detect when user returns to the app
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && audioStarted) {
+        // Check if audio context is suspended
+        if (Tone.getContext().state === "suspended") {
+          setAudioSuspended(true);
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [audioStarted]);
+
+  // Periodically check audio context state
+  useEffect(() => {
+    if (!audioStarted) return;
+    
+    const checkAudioState = () => {
+      if (Tone.getContext().state === "suspended") {
+        setAudioSuspended(true);
+      } else {
+        setAudioSuspended(false);
+      }
+    };
+    
+    const interval = setInterval(checkAudioState, 1000);
+    return () => clearInterval(interval);
+  }, [audioStarted]);
 
   const playNote = useCallback((midiNote: number, duration: number) => {
     if (!synthRef.current) return;
+    if (Tone.getContext().state !== "running") return;
     const freq = Tone.Frequency(midiNote, "midi").toFrequency();
     synthRef.current.triggerAttackRelease(freq, duration);
     pulseRef.current = 1;
   }, []);
 
   useEffect(() => {
-    if (!canvasRef.current || !playerUpdate || !conductorPresent || !audioStarted) return;
+    if (!canvasRef.current || !playerUpdate || !conductorPresent || !audioStarted || audioSuspended) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
@@ -153,7 +197,7 @@ export default function Player() {
       window.removeEventListener("resize", resize);
       cancelAnimationFrame(animationRef.current);
     };
-  }, [playerUpdate, conductorPresent, audioStarted, getServerTime, playNote]);
+  }, [playerUpdate, conductorPresent, audioStarted, audioSuspended, getServerTime, playNote]);
 
   useEffect(() => {
     return () => {
@@ -258,6 +302,36 @@ export default function Player() {
             >
               <Volume2 className="w-5 h-5 mr-2" />
               Start Audio
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Audio suspended overlay - show when audio context is suspended
+  if (audioSuspended) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
+        <Badge variant="secondary" className="mb-8" data-testid="badge-player-name">
+          {name}
+        </Badge>
+        <div className="text-center">
+          <div className="mb-8">
+            <Volume2 className="w-16 h-16 mx-auto mb-6 text-muted-foreground" />
+            <h2 className="text-2xl font-medium text-foreground mb-2" data-testid="text-resume-title">
+              Audio Paused
+            </h2>
+            <p className="text-muted-foreground mb-6" data-testid="text-resume-message">
+              Tap below to resume the audio
+            </p>
+            <Button 
+              size="lg"
+              onClick={resumeAudio}
+              data-testid="button-resume-audio"
+            >
+              <Volume2 className="w-5 h-5 mr-2" />
+              Resume Audio
             </Button>
           </div>
         </div>

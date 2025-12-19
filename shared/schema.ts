@@ -6,6 +6,7 @@ export interface PlayerState {
   name: string;
   pitch: number; // MIDI note number (36-84)
   interval: number; // milliseconds (50-3000)
+  phaseStartServerTime: number; // Per-player phase start time
 }
 
 // Full application state
