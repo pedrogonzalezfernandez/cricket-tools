@@ -2,6 +2,7 @@ import { z } from "zod";
 
 // Player state managed by server
 export interface PlayerState {
+  playerId: number; // Stable numeric ID for OSC addressing
   socketId: string;
   name: string;
   pitch: number; // MIDI note number (36-84)

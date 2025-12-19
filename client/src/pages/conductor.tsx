@@ -87,15 +87,12 @@ export default function Conductor() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {playerList.map((player) => (
-              <Card key={player.socketId} data-testid={`card-player-${player.socketId}`}>
+              <Card key={player.socketId} data-testid={`card-player-${player.playerId}`}>
                 <CardHeader className="pb-4">
                   <div className="flex items-center justify-between gap-2">
-                    <CardTitle className="text-lg font-medium truncate" data-testid={`text-player-name-${player.socketId}`}>
-                      {player.name}
+                    <CardTitle className="text-lg font-medium truncate" data-testid={`text-player-name-${player.playerId}`}>
+                      {player.playerId} – {player.name}
                     </CardTitle>
-                    <code className="text-xs text-muted-foreground font-mono truncate max-w-24" data-testid={`text-player-id-${player.socketId}`}>
-                      {player.socketId.slice(0, 8)}
-                    </code>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -104,7 +101,7 @@ export default function Conductor() {
                       <label className="text-sm font-medium text-foreground">
                         Pitch
                       </label>
-                      <span className="text-sm font-mono text-muted-foreground" data-testid={`text-pitch-value-${player.socketId}`}>
+                      <span className="text-sm font-mono text-muted-foreground" data-testid={`text-pitch-value-${player.playerId}`}>
                         {midiToNoteName(player.pitch)} ({player.pitch})
                       </span>
                     </div>
@@ -114,7 +111,7 @@ export default function Conductor() {
                       max={84}
                       step={1}
                       onValueChange={(value) => setPlayerPitch(player.socketId, value[0])}
-                      data-testid={`slider-pitch-${player.socketId}`}
+                      data-testid={`slider-pitch-${player.playerId}`}
                     />
                   </div>
                   
@@ -123,7 +120,7 @@ export default function Conductor() {
                       <label className="text-sm font-medium text-foreground">
                         Interval
                       </label>
-                      <span className="text-sm font-mono text-muted-foreground" data-testid={`text-interval-value-${player.socketId}`}>
+                      <span className="text-sm font-mono text-muted-foreground" data-testid={`text-interval-value-${player.playerId}`}>
                         {player.interval} ms
                       </span>
                     </div>
@@ -133,7 +130,7 @@ export default function Conductor() {
                       max={3000}
                       step={50}
                       onValueChange={(value) => setPlayerInterval(player.socketId, value[0])}
-                      data-testid={`slider-interval-${player.socketId}`}
+                      data-testid={`slider-interval-${player.playerId}`}
                     />
                   </div>
                 </CardContent>
