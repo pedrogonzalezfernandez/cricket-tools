@@ -21,7 +21,7 @@ export default function Player() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>(0);
   const synthRef = useRef<Tone.Synth | null>(null);
-  const lastTriggerRef = useRef<number>(0);
+  const lastCycleRef = useRef<number>(-1);
   const pulseRef = useRef<number>(0);
 
   const handleJoin = (e: React.FormEvent) => {
@@ -135,15 +135,15 @@ export default function Player() {
       const phaseStart = playerUpdate.phaseStartServerTime;
       const interval = playerUpdate.interval;
       const elapsed = serverTime - phaseStart;
+      const currentCycle = Math.floor(elapsed / interval);
       const cycleProgress = ((elapsed % interval) + interval) % interval / interval;
       const angle = cycleProgress * Math.PI * 2 - Math.PI / 2;
 
-      const triggerZone = 0.03;
-      if (cycleProgress < triggerZone && lastTriggerRef.current > 1 - triggerZone) {
+      if (currentCycle > lastCycleRef.current) {
         const duration = Math.min(interval * 0.8, 300) / 1000;
         playNote(playerUpdate.pitch, duration);
+        lastCycleRef.current = currentCycle;
       }
-      lastTriggerRef.current = cycleProgress;
 
       pulseRef.current *= 0.9;
 
