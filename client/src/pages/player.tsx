@@ -141,8 +141,9 @@ export default function Player() {
       const angle = cycleProgress * Math.PI * 2 - Math.PI / 2;
 
       // Reset cycle tracking when phase timing changes or cycle regresses
+      // Set to currentCycle (not -1) to avoid triggering an immediate note
       if (phaseStart !== lastPhaseStartRef.current || currentCycle < lastCycleRef.current) {
-        lastCycleRef.current = currentCycle - 1;
+        lastCycleRef.current = currentCycle;
         lastPhaseStartRef.current = phaseStart;
       }
 
