@@ -22,6 +22,7 @@ export default function Player() {
   const animationRef = useRef<number>(0);
   const synthRef = useRef<Tone.Synth | null>(null);
   const lastCycleRef = useRef<number>(-1);
+  const lastPhaseStartRef = useRef<number>(0);
   const pulseRef = useRef<number>(0);
 
   const handleJoin = (e: React.FormEvent) => {
@@ -138,6 +139,12 @@ export default function Player() {
       const currentCycle = Math.floor(elapsed / interval);
       const cycleProgress = ((elapsed % interval) + interval) % interval / interval;
       const angle = cycleProgress * Math.PI * 2 - Math.PI / 2;
+
+      // Reset cycle tracking when phase timing changes or cycle regresses
+      if (phaseStart !== lastPhaseStartRef.current || currentCycle < lastCycleRef.current) {
+        lastCycleRef.current = currentCycle - 1;
+        lastPhaseStartRef.current = phaseStart;
+      }
 
       if (currentCycle > lastCycleRef.current) {
         const duration = Math.min(interval * 0.8, 300) / 1000;
