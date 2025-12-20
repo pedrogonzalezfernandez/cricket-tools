@@ -91,10 +91,51 @@ Send OSC to `127.0.0.1:9000` (UDP)
 6. Conductor can adjust pitch/interval sliders for each player
 7. Changes reflect immediately on player's audio and visual score
 
-### OSC Testing (Max/MSP example)
+### OSC Testing (Max/MSP example - LOCAL ONLY)
 1. Create a `[udpsend 127.0.0.1 9000]` object
 2. Send message: `/conductor 1 1 60` to set Player 1 pitch to C4
 3. Send message: `/conductor 1 2 500` to set Player 1 interval to 500ms
+
+**Note:** OSC only works when the server runs on the same machine as Max. For remote control, use Node for Max (below).
+
+## Node for Max Control (Remote WebSocket)
+
+For controlling the conductor from Max/MSP over the internet (when the app is hosted on Replit), use Node for Max with WebSocket:
+
+### Setup
+1. Download the script: `https://your-app-url.replit.app/public/conductor-control.js`
+2. Place it in your Max project folder
+3. Run `npm install socket.io-client` in that folder
+4. In Max, create `[node.script conductor-control.js]`
+
+### Usage in Max
+```
+Connect to server:
+  [message: connect https://your-app-url.replit.app]
+      |
+  [node.script conductor-control.js]
+
+Control a player (target, control, value):
+  [1]  [pitch]  [60]
+   |      |       |
+  [pak i s i]
+      |
+  [prepend control]
+      |
+  [node.script conductor-control.js]
+```
+
+### Shorthand handlers:
+- `pitch <target> <value>` - Set player pitch
+- `interval <target> <value>` - Set player interval  
+- `allpitch <value>` - Set all players pitch
+- `allinterval <value>` - Set all players interval
+
+### Control values:
+- **target**: 1, 2, 3... = specific player, -1 = all players
+- **control**: "pitch" or "interval"
+- **pitch value**: MIDI note 36-84
+- **interval value**: milliseconds 50-3000
 
 ## Limitations
 - Browser audio requires user gesture (player must click "Start Audio")
