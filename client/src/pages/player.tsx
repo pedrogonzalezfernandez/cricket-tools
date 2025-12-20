@@ -90,16 +90,9 @@ export default function Player() {
   }, [audioStarted]);
 
   const playNote = useCallback((midiNote: number, duration: number) => {
-    if (!synthRef.current) {
-      console.log("playNote: no synth");
-      return;
-    }
-    if (Tone.getContext().state !== "running") {
-      console.log("playNote: context state is", Tone.getContext().state);
-      return;
-    }
+    if (!synthRef.current) return;
+    if (Tone.getContext().state !== "running") return;
     const freq = Tone.Frequency(midiNote, "midi").toFrequency();
-    console.log("playNote: playing", midiNote, freq, duration);
     synthRef.current.triggerAttackRelease(freq, duration);
     pulseRef.current = 1;
   }, []);
