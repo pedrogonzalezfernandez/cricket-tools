@@ -1,8 +1,21 @@
 # Design Guidelines: Real-Time Audio Score Platform
 
 ## Design Approach
-**System Selected:** Apple HIG-inspired minimalism with performance-first principles
-**Rationale:** This real-time collaborative music tool demands clarity, precision, and zero visual distraction during performance. Clean interface hierarchy ensures conductors can make quick adjustments while players focus on the circular score visualization.
+**System Selected:** Monochrome minimalism with subtle animations
+**Rationale:** A strictly black and white palette creates a timeless, professional aesthetic that focuses attention on the performance. Subtle animations add polish without distraction.
+
+## Color Palette
+- **Primary:** Pure black (#0d0d0d light mode) / Pure white (#f5f5f5 dark mode)
+- **Background:** White (#fff light mode) / Near-black (#0a0a0a dark mode)
+- **Accents:** Grayscale only - no blue or colored elements
+- **Borders:** Subtle gray (#e0e0e0 light) / (#2a2a2a dark)
+
+## Animation Principles
+- **Fade-in:** Elements animate in with subtle translateY and opacity (0.4s)
+- **Scale-in:** Cards and modals scale from 0.96 to 1 (0.3s)
+- **Pulse-ring:** Waiting states use smooth pulsing circles (2s cycle)
+- **Breathe:** Icons gently fade in/out for attention (3s cycle)
+- **Card hover:** Subtle lift effect with soft shadow on hover
 
 ## Core Design Elements
 

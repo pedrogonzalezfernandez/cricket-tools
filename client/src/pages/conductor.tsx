@@ -26,16 +26,16 @@ export default function Conductor() {
   if (!isConnected) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <div className="text-center">
-          <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-muted animate-pulse" />
-          <p className="text-muted-foreground">Connecting...</p>
+        <div className="text-center animate-fade-in">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full border border-border animate-pulse-ring" />
+          <p className="text-muted-foreground font-light">Connecting...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background animate-fade-in">
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -48,9 +48,9 @@ export default function Conductor() {
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div className="flex items-center gap-2">
-              <Music className="w-5 h-5 text-primary" />
-              <h1 className="text-lg font-semibold" data-testid="text-conductor-title">
-                Conductor Dashboard
+              <Music className="w-5 h-5 text-foreground" />
+              <h1 className="text-lg font-medium tracking-tight" data-testid="text-conductor-title">
+                Conductor
               </h1>
             </div>
           </div>
@@ -65,9 +65,9 @@ export default function Conductor() {
               </SelectContent>
             </Select>
             
-            <Badge variant="secondary" className="gap-1" data-testid="badge-player-count">
+            <Badge variant="outline" className="gap-1" data-testid="badge-player-count">
               <Users className="w-3 h-3" />
-              {playerCount} {playerCount === 1 ? "Player" : "Players"}
+              {playerCount}
             </Badge>
           </div>
         </div>
@@ -75,23 +75,25 @@ export default function Conductor() {
 
       <main className="max-w-7xl mx-auto px-6 py-8">
         {playerCount === 0 ? (
-          <div className="text-center py-16">
-            <Users className="w-16 h-16 mx-auto mb-6 text-muted-foreground/50" />
-            <h2 className="text-xl font-medium text-foreground mb-2" data-testid="text-no-players-title">
-              No Players Connected
+          <div className="text-center py-16 animate-fade-in">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full border border-border flex items-center justify-center">
+              <Users className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h2 className="text-xl font-medium tracking-tight text-foreground mb-2" data-testid="text-no-players-title">
+              No Players
             </h2>
-            <p className="text-muted-foreground" data-testid="text-no-players-message">
-              Players will appear here when they join the performance
+            <p className="text-muted-foreground font-light" data-testid="text-no-players-message">
+              Players will appear here when they join
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {playerList.map((player) => (
-              <Card key={player.socketId} data-testid={`card-player-${player.playerId}`}>
+            {playerList.map((player, index) => (
+              <Card key={player.socketId} className={`animate-fade-in stagger-${Math.min(index + 1, 4)} opacity-0`} data-testid={`card-player-${player.playerId}`}>
                 <CardHeader className="pb-4">
                   <div className="flex items-center justify-between gap-2">
-                    <CardTitle className="text-lg font-medium truncate" data-testid={`text-player-name-${player.playerId}`}>
-                      {player.playerId} – {player.name}
+                    <CardTitle className="text-base font-medium tracking-tight truncate" data-testid={`text-player-name-${player.playerId}`}>
+                      {player.playerId} — {player.name}
                     </CardTitle>
                   </div>
                 </CardHeader>

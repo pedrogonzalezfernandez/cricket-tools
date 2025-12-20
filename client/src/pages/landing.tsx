@@ -9,28 +9,28 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6">
       <div className="max-w-4xl w-full">
-        <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4" data-testid="text-title">
+        <div className="text-center mb-16 animate-fade-in">
+          <h1 className="text-4xl md:text-6xl font-light tracking-tight text-foreground mb-6" data-testid="text-title">
             Audio Score
           </h1>
-          <p className="text-lg text-muted-foreground max-w-xl mx-auto" data-testid="text-tagline">
-            A real-time collaborative music experience. Join as a conductor to control the performance, or as a player to receive your personalized score.
+          <p className="text-lg text-muted-foreground max-w-xl mx-auto font-light" data-testid="text-tagline">
+            Real-time collaborative music. Control the performance or receive your personalized score.
           </p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 max-w-2xl mx-auto">
           <Card 
-            className="hover-elevate active-elevate-2 cursor-pointer transition-transform"
+            className="card-hover cursor-pointer animate-fade-in stagger-1 opacity-0"
             onClick={() => setLocation("/conductor")}
             data-testid="card-conductor"
           >
             <CardHeader className="text-center pb-4">
-              <div className="mx-auto mb-4 p-4 rounded-full bg-primary/10">
-                <Music className="w-10 h-10 text-primary" />
+              <div className="mx-auto mb-4 w-16 h-16 rounded-full border border-border flex items-center justify-center">
+                <Music className="w-7 h-7 text-foreground" />
               </div>
-              <CardTitle className="text-2xl font-semibold">Conductor</CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Control the performance in real-time
+              <CardTitle className="text-xl font-medium tracking-tight">Conductor</CardTitle>
+              <CardDescription className="text-muted-foreground font-light">
+                Control the performance
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center">
@@ -42,28 +42,28 @@ export default function Landing() {
                   setLocation("/conductor");
                 }}
               >
-                Enter as Conductor
+                Enter
               </Button>
             </CardContent>
           </Card>
 
           <Card 
-            className="hover-elevate active-elevate-2 cursor-pointer transition-transform"
+            className="card-hover cursor-pointer animate-fade-in stagger-2 opacity-0"
             onClick={() => setLocation("/player")}
             data-testid="card-player"
           >
             <CardHeader className="text-center pb-4">
-              <div className="mx-auto mb-4 p-4 rounded-full bg-accent">
-                <Users className="w-10 h-10 text-accent-foreground" />
+              <div className="mx-auto mb-4 w-16 h-16 rounded-full border border-border flex items-center justify-center">
+                <Users className="w-7 h-7 text-foreground" />
               </div>
-              <CardTitle className="text-2xl font-semibold">Player</CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Receive your personalized audio score
+              <CardTitle className="text-xl font-medium tracking-tight">Player</CardTitle>
+              <CardDescription className="text-muted-foreground font-light">
+                Receive your score
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center">
               <Button 
-                variant="secondary"
+                variant="outline"
                 className="w-full" 
                 data-testid="button-enter-player"
                 onClick={(e) => {
@@ -71,7 +71,7 @@ export default function Landing() {
                   setLocation("/player");
                 }}
               >
-                Enter as Player
+                Enter
               </Button>
             </CardContent>
           </Card>

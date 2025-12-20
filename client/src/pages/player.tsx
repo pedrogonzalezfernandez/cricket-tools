@@ -296,7 +296,7 @@ export default function Player() {
   if (!hasJoined || !isJoined) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <Card className="w-full max-w-md relative">
+        <Card className="w-full max-w-md relative animate-fade-in-scale">
           <Button 
             variant="ghost" 
             size="icon" 
@@ -307,9 +307,9 @@ export default function Player() {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <CardHeader className="pt-12">
-            <CardTitle className="text-center text-2xl">Join as Player</CardTitle>
-            <CardDescription className="text-center">
-              Enter your name to join the performance
+            <CardTitle className="text-center text-xl font-medium tracking-tight">Join as Player</CardTitle>
+            <CardDescription className="text-center font-light">
+              Enter your name to join
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -319,7 +319,7 @@ export default function Player() {
                 placeholder="Your name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="text-lg"
+                className="text-lg text-center"
                 autoFocus
                 data-testid="input-player-name"
               />
@@ -329,7 +329,7 @@ export default function Player() {
                 disabled={!name.trim() || !isConnected}
                 data-testid="button-join"
               >
-                {isConnected ? "Join Performance" : "Connecting..."}
+                {isConnected ? "Join" : "Connecting..."}
               </Button>
             </form>
           </CardContent>
@@ -340,18 +340,18 @@ export default function Player() {
 
   if (!conductorPresent) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-        <Badge variant="secondary" className="mb-8" data-testid="badge-player-name">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 animate-fade-in">
+        <Badge variant="outline" className="mb-8" data-testid="badge-player-name">
           {name}
         </Badge>
         <div className="text-center">
           <div className="mb-8">
-            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-muted animate-pulse" />
-            <h2 className="text-2xl font-medium text-foreground mb-2" data-testid="text-waiting-title">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full border border-border animate-pulse-ring" />
+            <h2 className="text-xl font-medium tracking-tight text-foreground mb-2" data-testid="text-waiting-title">
               Waiting for Conductor
             </h2>
-            <p className="text-muted-foreground" data-testid="text-waiting-message">
-              The performance will begin when a conductor joins...
+            <p className="text-muted-foreground font-light" data-testid="text-waiting-message">
+              The performance will begin soon
             </p>
           </div>
         </div>
@@ -368,26 +368,27 @@ export default function Player() {
 
   if (!audioStarted) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-        <Badge variant="secondary" className="mb-8" data-testid="badge-player-name">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 animate-fade-in">
+        <Badge variant="outline" className="mb-8" data-testid="badge-player-name">
           {name}
         </Badge>
         <div className="text-center">
           <div className="mb-8">
-            <Volume2 className="w-16 h-16 mx-auto mb-6 text-muted-foreground" />
-            <h2 className="text-2xl font-medium text-foreground mb-2" data-testid="text-start-title">
-              Ready to Play
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full border border-border flex items-center justify-center animate-breathe">
+              <Volume2 className="w-8 h-8 text-foreground" />
+            </div>
+            <h2 className="text-xl font-medium tracking-tight text-foreground mb-2" data-testid="text-start-title">
+              Ready
             </h2>
-            <p className="text-muted-foreground mb-6" data-testid="text-start-message">
-              Click below to enable audio and start receiving your score
+            <p className="text-muted-foreground font-light mb-6" data-testid="text-start-message">
+              Tap to enable audio
             </p>
             <Button 
               size="lg"
               onClick={startAudio}
               data-testid="button-start-audio"
             >
-              <Volume2 className="w-5 h-5 mr-2" />
-              Start Audio
+              Start
             </Button>
           </div>
         </div>
@@ -396,9 +397,9 @@ export default function Player() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col relative">
+    <div className="min-h-screen bg-background flex flex-col relative animate-fade-in">
       <div className="absolute top-4 left-4 z-10">
-        <Badge variant="secondary" data-testid="badge-player-name-score">
+        <Badge variant="outline" data-testid="badge-player-name-score">
           {name}
         </Badge>
       </div>
@@ -422,30 +423,32 @@ export default function Player() {
           />
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <span 
-              className="text-6xl md:text-7xl font-bold text-foreground"
+              className="text-6xl md:text-8xl font-light tracking-tighter text-foreground"
               data-testid="text-note-name"
             >
               {playerUpdate ? midiToNoteName(playerUpdate.pitch) : "—"}
             </span>
           </div>
         </div>
-        <div className="mt-6 text-sm text-muted-foreground" data-testid="text-interval">
-          Interval: {playerUpdate?.interval ?? 0} ms
+        <div className="mt-6 text-sm text-muted-foreground font-light tracking-wide" data-testid="text-interval">
+          {playerUpdate?.interval ?? 0} ms
         </div>
       </div>
 
       {audioSuspended && (
         <div 
-          className="absolute inset-0 z-20 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center cursor-pointer"
+          className="absolute inset-0 z-20 bg-background/90 backdrop-blur-md flex flex-col items-center justify-center cursor-pointer animate-fade-in"
           onClick={resumeAudio}
           data-testid="overlay-resume-audio"
         >
-          <Volume2 className="w-16 h-16 mb-4 text-muted-foreground" />
-          <h2 className="text-2xl font-medium text-foreground mb-2" data-testid="text-resume-title">
-            Audio Paused
+          <div className="w-20 h-20 rounded-full border border-border flex items-center justify-center mb-6 animate-breathe">
+            <Volume2 className="w-8 h-8 text-foreground" />
+          </div>
+          <h2 className="text-xl font-medium tracking-tight text-foreground mb-2" data-testid="text-resume-title">
+            Paused
           </h2>
-          <p className="text-muted-foreground" data-testid="text-resume-message">
-            Tap anywhere to resume
+          <p className="text-muted-foreground font-light" data-testid="text-resume-message">
+            Tap to resume
           </p>
         </div>
       )}
