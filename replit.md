@@ -146,11 +146,18 @@ All commands use integers: `target control value`
 
 Controls are defined in `shared/controls.ts` and are scene-aware. When adding new scenes with different controls, define them there. Control IDs correspond to slider positions in the conductor UI.
 
+## Mobile Audio Handling
+- Screen Wake Lock API keeps screen on during playback (iOS Safari 16.4+)
+- Animation continues even if audio is suspended (phone sleep)
+- Tap-anywhere overlay appears to resume audio after interruption
+- Silent note trick unlocks iOS audio on start and resume
+
 ## Limitations
 - Browser audio requires user gesture (player must click "Start Audio")
 - In-memory state resets on server restart
 - Scene 1 (Audio Score) only - future scenes planned
 - Player IDs are session-stable only (reset on server restart)
+- Wake Lock works best in iOS Home Screen Web Apps (PWA mode)
 
 ## User Preferences
 - Clean, minimal UI following Apple HIG design

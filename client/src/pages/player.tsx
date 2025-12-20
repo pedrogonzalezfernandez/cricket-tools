@@ -24,6 +24,27 @@ export default function Player() {
   const lastCycleRef = useRef<number>(-1);
   const lastPhaseStartRef = useRef<number>(0);
   const pulseRef = useRef<number>(0);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+
+  const requestWakeLock = useCallback(async () => {
+    if (!('wakeLock' in navigator)) return;
+    
+    try {
+      wakeLockRef.current = await navigator.wakeLock.request('screen');
+      wakeLockRef.current.addEventListener('release', () => {
+        wakeLockRef.current = null;
+      });
+    } catch (err) {
+      console.log('Wake lock request failed:', err);
+    }
+  }, []);
+
+  const releaseWakeLock = useCallback(() => {
+    if (wakeLockRef.current) {
+      wakeLockRef.current.release();
+      wakeLockRef.current = null;
+    }
+  }, []);
 
   const handleJoin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,6 +88,9 @@ export default function Player() {
         }
       }, 100);
       
+      // Request wake lock to keep screen on
+      await requestWakeLock();
+      
       setAudioStarted(true);
       setAudioSuspended(false);
     } catch (err) {
@@ -105,12 +129,14 @@ export default function Player() {
 
   // Handle visibility change to detect when user returns to the app
   useEffect(() => {
-    const handleVisibilityChange = () => {
+    const handleVisibilityChange = async () => {
       if (document.visibilityState === "visible" && audioStarted) {
         // Check if audio context is suspended
         if (Tone.getContext().state === "suspended") {
           setAudioSuspended(true);
         }
+        // Re-request wake lock when becoming visible (it's released on hide)
+        await requestWakeLock();
       }
     };
 
@@ -119,7 +145,7 @@ export default function Player() {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [audioStarted]);
+  }, [audioStarted, requestWakeLock]);
 
   // Periodically check audio context state
   useEffect(() => {
@@ -263,8 +289,9 @@ export default function Player() {
       if (synthRef.current) {
         synthRef.current.dispose();
       }
+      releaseWakeLock();
     };
-  }, []);
+  }, [releaseWakeLock]);
 
   if (!hasJoined || !isJoined) {
     return (
