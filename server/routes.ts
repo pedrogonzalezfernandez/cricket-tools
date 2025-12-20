@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { Server as SocketIOServer } from "socket.io";
 import type { PlayerState, AppState } from "@shared/schema";
+import { resolveControl } from "@shared/controls";
 import * as dgram from "dgram";
 
 // In-memory state
@@ -229,7 +230,7 @@ export async function registerRoutes(
     }
   }
 
-  // Handle OSC command
+  // Handle OSC command - uses the control registry
   function handleOscCommand(address: string, args: number[]) {
     if (address !== "/conductor") return;
     if (args.length < 3) {
@@ -241,11 +242,7 @@ export async function registerRoutes(
     const control = Math.floor(args[1]);
     const value = args[2];
 
-    // Control codes:
-    // 1 = pitch
-    // 2 = interval (ms)
-    // 100 = scene (global)
-
+    // Control 100 = scene (global only, reserved)
     if (target === 0) {
       // Global controls
       if (control === 100) {
@@ -260,7 +257,29 @@ export async function registerRoutes(
           console.log(`OSC ignored: invalid scene index ${sceneIndex}`);
         }
       }
-    } else if (target === -1) {
+      return;
+    }
+
+    // Resolve control using registry for player controls
+    const controlDef = resolveControl(currentScene, control);
+    if (!controlDef) {
+      console.log(`OSC ignored: unknown control ${control} for scene ${currentScene}`);
+      return;
+    }
+
+    const controlName = controlDef.name;
+
+    // Helper to apply control
+    const applyControl = (socketId: string): boolean => {
+      if (controlName === "pitch") {
+        return setPlayerPitch(socketId, Math.floor(value));
+      } else if (controlName === "interval") {
+        return setPlayerInterval(socketId, Math.floor(value));
+      }
+      return false;
+    };
+
+    if (target === -1) {
       // Apply to all players
       const playerIds = getAllPlayerIds();
       let appliedCount = 0;
@@ -268,22 +287,11 @@ export async function registerRoutes(
       playerIds.forEach((playerId) => {
         const socketId = getSocketIdFromPlayerId(playerId);
         if (!socketId) return;
-
-        if (control === 1) {
-          // Pitch
-          if (setPlayerPitch(socketId, Math.floor(value))) {
-            appliedCount++;
-          }
-        } else if (control === 2) {
-          // Interval
-          if (setPlayerInterval(socketId, Math.floor(value))) {
-            appliedCount++;
-          }
-        }
+        if (applyControl(socketId)) appliedCount++;
       });
 
       if (appliedCount > 0) {
-        console.log(`OSC applied: target=-1 (all ${appliedCount} players), control=${control}, value=${value}`);
+        console.log(`OSC applied: target=-1 (all ${appliedCount} players), control=${controlDef.id} (${controlName}), value=${value}`);
       }
     } else if (target > 0) {
       // Specific player
@@ -293,16 +301,8 @@ export async function registerRoutes(
         return;
       }
 
-      if (control === 1) {
-        // Pitch
-        if (setPlayerPitch(socketId, Math.floor(value))) {
-          console.log(`OSC applied: target=${target}, control=1 (pitch), value=${Math.floor(value)}`);
-        }
-      } else if (control === 2) {
-        // Interval
-        if (setPlayerInterval(socketId, Math.floor(value))) {
-          console.log(`OSC applied: target=${target}, control=2 (interval), value=${Math.floor(value)}`);
-        }
+      if (applyControl(socketId)) {
+        console.log(`OSC applied: target=${target}, control=${controlDef.id} (${controlName}), value=${Math.floor(value)}`);
       }
     }
   }
@@ -440,17 +440,42 @@ export async function registerRoutes(
     });
 
     // Max/MSP command handler - accepts player number instead of socketId
-    // Format: { target: playerNumber, control: "pitch" | "interval", value: number }
+    // Format: { target: playerNumber, control: number | string, value: number }
     // target: 0 = ignored, -1 = all players, 1+ = specific player
-    socket.on("maxCommand", (data: { target: number; control: string; value: number }) => {
+    // control: can be numeric ID (1=pitch, 2=interval) or string name ("pitch", "interval")
+    socket.on("maxCommand", (data: { target: number; control: number | string; value: number }) => {
       if (!conductorSockets.has(socket.id)) return;
       
       const { target, control, value } = data;
       
-      if (typeof target !== "number" || typeof control !== "string" || typeof value !== "number") {
+      if (typeof target !== "number" || typeof value !== "number") {
         console.log("maxCommand ignored: invalid data format");
         return;
       }
+
+      if (typeof control !== "number" && typeof control !== "string") {
+        console.log("maxCommand ignored: control must be number or string");
+        return;
+      }
+
+      // Resolve control using the registry (supports both ID and name)
+      const controlDef = resolveControl(currentScene, control);
+      if (!controlDef) {
+        console.log(`maxCommand ignored: unknown control ${control} for scene ${currentScene}`);
+        return;
+      }
+
+      const controlName = controlDef.name;
+
+      // Helper to apply control to a socket
+      const applyControl = (socketId: string): boolean => {
+        if (controlName === "pitch") {
+          return setPlayerPitch(socketId, Math.floor(value));
+        } else if (controlName === "interval") {
+          return setPlayerInterval(socketId, Math.floor(value));
+        }
+        return false;
+      };
 
       if (target === -1) {
         // Apply to all players
@@ -460,16 +485,11 @@ export async function registerRoutes(
         playerIds.forEach((playerId) => {
           const socketId = getSocketIdFromPlayerId(playerId);
           if (!socketId) return;
-
-          if (control === "pitch") {
-            if (setPlayerPitch(socketId, Math.floor(value))) appliedCount++;
-          } else if (control === "interval") {
-            if (setPlayerInterval(socketId, Math.floor(value))) appliedCount++;
-          }
+          if (applyControl(socketId)) appliedCount++;
         });
 
         if (appliedCount > 0) {
-          console.log(`maxCommand applied: target=-1 (all ${appliedCount} players), control=${control}, value=${value}`);
+          console.log(`maxCommand applied: target=-1 (all ${appliedCount} players), control=${controlDef.id} (${controlName}), value=${value}`);
         }
       } else if (target > 0) {
         // Specific player by number
@@ -479,14 +499,8 @@ export async function registerRoutes(
           return;
         }
 
-        if (control === "pitch") {
-          if (setPlayerPitch(socketId, Math.floor(value))) {
-            console.log(`maxCommand applied: target=${target}, control=pitch, value=${Math.floor(value)}`);
-          }
-        } else if (control === "interval") {
-          if (setPlayerInterval(socketId, Math.floor(value))) {
-            console.log(`maxCommand applied: target=${target}, control=interval, value=${Math.floor(value)}`);
-          }
+        if (applyControl(socketId)) {
+          console.log(`maxCommand applied: target=${target}, control=${controlDef.id} (${controlName}), value=${Math.floor(value)}`);
         }
       }
     });

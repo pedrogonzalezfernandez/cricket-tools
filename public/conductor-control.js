@@ -6,6 +6,17 @@
  * 2. Run: npm install socket.io-client (in your Max project folder)
  * 3. In Max, create a [node.script conductor-control.js] object
  * 
+ * CONTROL FORMAT:
+ * All commands use integers only: target, control, value
+ * 
+ * Target values:
+ *   1, 2, 3...: specific player number
+ *   -1: all players
+ * 
+ * Control IDs (for audioScore scene):
+ *   1 = pitch (MIDI note 36-84)
+ *   2 = interval (milliseconds 50-3000)
+ * 
  * USAGE IN MAX:
  * 
  * Connect to server:
@@ -13,22 +24,23 @@
  *       |
  *   [node.script conductor-control.js]
  * 
- * Send control command (target, control, value):
- *   [1]  [pitch]  [60]     <- player 1, pitch, MIDI note 60
+ * Integer-only control (target, control, value):
+ *   [1]  [1]  [60]     <- player 1, control 1 (pitch), value 60
+ *    |    |     |
+ *   [pak i i i]
+ *       |
+ *   [prepend control]
+ *       |
+ *   [node.script conductor-control.js]
+ * 
+ * Alternative with string control names (backwards compatible):
+ *   [1]  [pitch]  [60]
  *    |      |       |
  *   [pak i s i]
  *       |
  *   [prepend control]
  *       |
  *   [node.script conductor-control.js]
- * 
- * Control types:
- *   - "pitch": MIDI note (36-84)
- *   - "interval": milliseconds (50-3000)
- * 
- * Target values:
- *   - 1, 2, 3...: specific player number
- *   - -1: all players
  */
 
 const Max = require("max-api");
@@ -38,6 +50,7 @@ let socket = null;
 let isConnected = false;
 
 Max.post("Conductor Control script loaded");
+Max.post("Control IDs: 1=pitch, 2=interval");
 Max.post("Use 'connect <url>' to connect to the conductor server");
 
 Max.addHandler("connect", async (url) => {
@@ -121,11 +134,6 @@ Max.addHandler("control", (target, control, value) => {
     return;
   }
 
-  if (control !== "pitch" && control !== "interval") {
-    Max.post("Error: control must be 'pitch' or 'interval'");
-    return;
-  }
-
   socket.emit("maxCommand", { target, control, value });
 });
 
@@ -134,7 +142,7 @@ Max.addHandler("pitch", (target, value) => {
     Max.post("Error: Not connected");
     return;
   }
-  socket.emit("maxCommand", { target, control: "pitch", value });
+  socket.emit("maxCommand", { target, control: 1, value });
 });
 
 Max.addHandler("interval", (target, value) => {
@@ -142,7 +150,7 @@ Max.addHandler("interval", (target, value) => {
     Max.post("Error: Not connected");
     return;
   }
-  socket.emit("maxCommand", { target, control: "interval", value });
+  socket.emit("maxCommand", { target, control: 2, value });
 });
 
 Max.addHandler("allpitch", (value) => {
@@ -150,7 +158,7 @@ Max.addHandler("allpitch", (value) => {
     Max.post("Error: Not connected");
     return;
   }
-  socket.emit("maxCommand", { target: -1, control: "pitch", value });
+  socket.emit("maxCommand", { target: -1, control: 1, value });
 });
 
 Max.addHandler("allinterval", (value) => {
@@ -158,5 +166,5 @@ Max.addHandler("allinterval", (value) => {
     Max.post("Error: Not connected");
     return;
   }
-  socket.emit("maxCommand", { target: -1, control: "interval", value });
+  socket.emit("maxCommand", { target: -1, control: 2, value });
 });

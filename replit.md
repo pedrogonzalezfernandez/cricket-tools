@@ -116,26 +116,35 @@ Connect to server:
   [node.script conductor-control.js]
 
 Control a player (target, control, value):
-  [1]  [pitch]  [60]
-   |      |       |
-  [pak i s i]
+  [1]  [1]  [60]     <- player 1, control 1 (pitch), value 60
+   |    |     |
+  [pak i i i]
       |
   [prepend control]
       |
   [node.script conductor-control.js]
 ```
 
+### Control IDs (audioScore scene)
+All commands use integers: `target control value`
+- **1** = Pitch (MIDI note 36-84)
+- **2** = Interval (milliseconds 50-3000)
+
 ### Shorthand handlers:
-- `pitch <target> <value>` - Set player pitch
-- `interval <target> <value>` - Set player interval  
+- `pitch <target> <value>` - Set player pitch (uses control ID 1)
+- `interval <target> <value>` - Set player interval (uses control ID 2)
 - `allpitch <value>` - Set all players pitch
 - `allinterval <value>` - Set all players interval
 
 ### Control values:
 - **target**: 1, 2, 3... = specific player, -1 = all players
-- **control**: "pitch" or "interval"
+- **control**: integer ID (1=pitch, 2=interval) or string ("pitch", "interval") for backwards compatibility
 - **pitch value**: MIDI note 36-84
 - **interval value**: milliseconds 50-3000
+
+## Control Registry
+
+Controls are defined in `shared/controls.ts` and are scene-aware. When adding new scenes with different controls, define them there. Control IDs correspond to slider positions in the conductor UI.
 
 ## Limitations
 - Browser audio requires user gesture (player must click "Start Audio")
