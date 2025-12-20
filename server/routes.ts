@@ -439,6 +439,58 @@ export async function registerRoutes(
       setScene(data.scene);
     });
 
+    // Max/MSP command handler - accepts player number instead of socketId
+    // Format: { target: playerNumber, control: "pitch" | "interval", value: number }
+    // target: 0 = ignored, -1 = all players, 1+ = specific player
+    socket.on("maxCommand", (data: { target: number; control: string; value: number }) => {
+      if (!conductorSockets.has(socket.id)) return;
+      
+      const { target, control, value } = data;
+      
+      if (typeof target !== "number" || typeof control !== "string" || typeof value !== "number") {
+        console.log("maxCommand ignored: invalid data format");
+        return;
+      }
+
+      if (target === -1) {
+        // Apply to all players
+        const playerIds = getAllPlayerIds();
+        let appliedCount = 0;
+
+        playerIds.forEach((playerId) => {
+          const socketId = getSocketIdFromPlayerId(playerId);
+          if (!socketId) return;
+
+          if (control === "pitch") {
+            if (setPlayerPitch(socketId, Math.floor(value))) appliedCount++;
+          } else if (control === "interval") {
+            if (setPlayerInterval(socketId, Math.floor(value))) appliedCount++;
+          }
+        });
+
+        if (appliedCount > 0) {
+          console.log(`maxCommand applied: target=-1 (all ${appliedCount} players), control=${control}, value=${value}`);
+        }
+      } else if (target > 0) {
+        // Specific player by number
+        const socketId = getSocketIdFromPlayerId(target);
+        if (!socketId) {
+          console.log(`maxCommand ignored: player ${target} not connected`);
+          return;
+        }
+
+        if (control === "pitch") {
+          if (setPlayerPitch(socketId, Math.floor(value))) {
+            console.log(`maxCommand applied: target=${target}, control=pitch, value=${Math.floor(value)}`);
+          }
+        } else if (control === "interval") {
+          if (setPlayerInterval(socketId, Math.floor(value))) {
+            console.log(`maxCommand applied: target=${target}, control=interval, value=${Math.floor(value)}`);
+          }
+        }
+      }
+    });
+
     // Handle disconnect
     socket.on("disconnect", () => {
       console.log(`Client disconnected: ${socket.id}`);
