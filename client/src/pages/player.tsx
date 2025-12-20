@@ -138,15 +138,18 @@ export default function Player() {
   }, [audioStarted]);
 
   const playNote = useCallback((midiNote: number, duration: number) => {
+    // Always trigger the visual pulse, even if audio can't play
+    pulseRef.current = 1;
+    
     if (!synthRef.current) return;
     if (Tone.getContext().state !== "running") return;
     const freq = Tone.Frequency(midiNote, "midi").toFrequency();
     synthRef.current.triggerAttackRelease(freq, duration);
-    pulseRef.current = 1;
   }, []);
 
   useEffect(() => {
-    if (!canvasRef.current || !playerUpdate || !conductorPresent || !audioStarted || audioSuspended) return;
+    // Keep animation running even when audio is suspended - only audio won't play
+    if (!canvasRef.current || !playerUpdate || !conductorPresent || !audioStarted) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
@@ -253,7 +256,7 @@ export default function Player() {
       window.removeEventListener("resize", resize);
       cancelAnimationFrame(animationRef.current);
     };
-  }, [playerUpdate, conductorPresent, audioStarted, audioSuspended, getServerTime, playNote]);
+  }, [playerUpdate, conductorPresent, audioStarted, getServerTime, playNote]);
 
   useEffect(() => {
     return () => {
@@ -365,36 +368,6 @@ export default function Player() {
     );
   }
 
-  // Audio suspended overlay - show when audio context is suspended
-  if (audioSuspended) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-        <Badge variant="secondary" className="mb-8" data-testid="badge-player-name">
-          {name}
-        </Badge>
-        <div className="text-center">
-          <div className="mb-8">
-            <Volume2 className="w-16 h-16 mx-auto mb-6 text-muted-foreground" />
-            <h2 className="text-2xl font-medium text-foreground mb-2" data-testid="text-resume-title">
-              Audio Paused
-            </h2>
-            <p className="text-muted-foreground mb-6" data-testid="text-resume-message">
-              Tap below to resume the audio
-            </p>
-            <Button 
-              size="lg"
-              onClick={resumeAudio}
-              data-testid="button-resume-audio"
-            >
-              <Volume2 className="w-5 h-5 mr-2" />
-              Resume Audio
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background flex flex-col relative">
       <div className="absolute top-4 left-4 z-10">
@@ -433,6 +406,22 @@ export default function Player() {
           Interval: {playerUpdate?.interval ?? 0} ms
         </div>
       </div>
+
+      {audioSuspended && (
+        <div 
+          className="absolute inset-0 z-20 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center cursor-pointer"
+          onClick={resumeAudio}
+          data-testid="overlay-resume-audio"
+        >
+          <Volume2 className="w-16 h-16 mb-4 text-muted-foreground" />
+          <h2 className="text-2xl font-medium text-foreground mb-2" data-testid="text-resume-title">
+            Audio Paused
+          </h2>
+          <p className="text-muted-foreground" data-testid="text-resume-message">
+            Tap anywhere to resume
+          </p>
+        </div>
+      )}
     </div>
   );
 }
