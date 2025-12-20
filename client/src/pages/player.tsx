@@ -34,25 +34,73 @@ export default function Player() {
   };
 
   const startAudio = async () => {
-    await Tone.start();
-    synthRef.current = new Tone.Synth({
-      oscillator: { type: "sine" },
-      envelope: {
-        attack: 0.02,
-        decay: 0.1,
-        sustain: 0.3,
-        release: 0.15,
-      },
-    }).toDestination();
-    setAudioStarted(true);
-    setAudioSuspended(false);
+    try {
+      // Ensure Tone.js context is started
+      await Tone.start();
+      
+      // Get the underlying audio context and ensure it's running
+      const ctx = Tone.getContext().rawContext;
+      if (ctx.state === "suspended") {
+        await ctx.resume();
+      }
+      
+      // Create the synth
+      synthRef.current = new Tone.Synth({
+        oscillator: { type: "sine" },
+        envelope: {
+          attack: 0.02,
+          decay: 0.1,
+          sustain: 0.3,
+          release: 0.15,
+        },
+      }).toDestination();
+      
+      // Play a silent note to fully unlock audio on iOS
+      // This is a common workaround for mobile browser audio restrictions
+      synthRef.current.volume.value = -Infinity;
+      synthRef.current.triggerAttackRelease("C4", "16n");
+      
+      // After a brief moment, restore volume
+      setTimeout(() => {
+        if (synthRef.current) {
+          synthRef.current.volume.value = 0;
+        }
+      }, 100);
+      
+      setAudioStarted(true);
+      setAudioSuspended(false);
+    } catch (err) {
+      console.error("Failed to start audio:", err);
+    }
   };
 
   const resumeAudio = async () => {
-    if (Tone.getContext().state === "suspended") {
+    try {
+      // Resume the Tone.js context
       await Tone.start();
+      
+      // Also resume the raw audio context for iOS
+      const ctx = Tone.getContext().rawContext;
+      if (ctx.state === "suspended") {
+        await ctx.resume();
+      }
+      
+      // Play a silent note to re-unlock audio on iOS after resume
+      if (synthRef.current) {
+        const prevVolume = synthRef.current.volume.value;
+        synthRef.current.volume.value = -Infinity;
+        synthRef.current.triggerAttackRelease("C4", "16n");
+        setTimeout(() => {
+          if (synthRef.current) {
+            synthRef.current.volume.value = prevVolume;
+          }
+        }, 100);
+      }
+      
+      setAudioSuspended(false);
+    } catch (err) {
+      console.error("Failed to resume audio:", err);
     }
-    setAudioSuspended(false);
   };
 
   // Handle visibility change to detect when user returns to the app
