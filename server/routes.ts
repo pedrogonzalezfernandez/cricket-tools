@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { Server as SocketIOServer } from "socket.io";
 import type { PlayerState, AppState } from "@shared/schema";
-import { Server as OscServer } from "node-osc";
+import * as dgram from "dgram";
 
 // In-memory state
 const players: Record<string, PlayerState> = {};
@@ -140,95 +140,197 @@ export async function registerRoutes(
     return true;
   }
 
-  // OSC Server setup
+  // UDP/OSC Server setup - supports both raw text and binary OSC
   const OSC_PORT = 9000;
-  const oscServer = new OscServer(OSC_PORT, "127.0.0.1");
+  const udpServer = dgram.createSocket("udp4");
 
-  oscServer.on("message", (msg: any[]) => {
-    const address = msg[0];
-    
-    if (address === "/conductor") {
-      const target = typeof msg[1] === "number" ? msg[1] : parseInt(msg[1]);
-      const control = typeof msg[2] === "number" ? msg[2] : parseInt(msg[2]);
-      const value = typeof msg[3] === "number" ? msg[3] : parseFloat(msg[3]);
-
-      if (isNaN(target) || isNaN(control) || isNaN(value)) {
-        console.log(`OSC ignored: invalid arguments - target=${msg[1]}, control=${msg[2]}, value=${msg[3]}`);
-        return;
+  // Parse OSC binary format
+  function parseOscBinary(buffer: Buffer): { address: string; args: number[] } | null {
+    try {
+      // Read null-terminated address string
+      let offset = 0;
+      let addressEnd = buffer.indexOf(0, offset);
+      if (addressEnd === -1) return null;
+      
+      const address = buffer.toString("ascii", offset, addressEnd);
+      if (!address.startsWith("/")) return null;
+      
+      // Skip to 4-byte boundary
+      offset = Math.ceil((addressEnd + 1) / 4) * 4;
+      
+      // Read type tag string (starts with ,)
+      if (buffer[offset] !== 44) return null; // 44 = ','
+      
+      let typeTagEnd = buffer.indexOf(0, offset);
+      if (typeTagEnd === -1) return null;
+      
+      const typeTag = buffer.toString("ascii", offset + 1, typeTagEnd);
+      offset = Math.ceil((typeTagEnd + 1) / 4) * 4;
+      
+      // Parse arguments based on type tags
+      const args: number[] = [];
+      for (const t of typeTag) {
+        if (t === "i") {
+          // 32-bit int (big-endian)
+          args.push(buffer.readInt32BE(offset));
+          offset += 4;
+        } else if (t === "f") {
+          // 32-bit float (big-endian)
+          args.push(buffer.readFloatBE(offset));
+          offset += 4;
+        }
       }
+      
+      return { address, args };
+    } catch {
+      return null;
+    }
+  }
 
-      // Control codes:
-      // 1 = pitch
-      // 2 = interval (ms)
-      // 100 = scene (global)
+  // Parse raw text format: "/conductor 1 2 500" or "/ conductor 0. 0. 1789."
+  function parseRawText(text: string): { address: string; args: number[] } | null {
+    try {
+      // Handle Max's format which may have "/ conductor" (space after /)
+      // or "/conductor" (no space)
+      const cleaned = text.trim().replace(/\s+/g, " ");
+      const parts = cleaned.split(" ");
+      
+      if (parts.length < 1) return null;
+      
+      // Find the address (starts with /)
+      let address = "";
+      let argStart = 0;
+      
+      if (parts[0] === "/") {
+        // Format: "/ conductor 0 0 1789"
+        address = "/" + parts[1];
+        argStart = 2;
+      } else if (parts[0].startsWith("/")) {
+        // Format: "/conductor 0 0 1789"
+        address = parts[0];
+        argStart = 1;
+      } else {
+        return null;
+      }
+      
+      // Parse numeric arguments (handle trailing dots from Max floats: "0." "1789.")
+      const args: number[] = [];
+      for (let i = argStart; i < parts.length; i++) {
+        let numStr = parts[i].replace(/\.$/g, ""); // Remove trailing dot
+        const num = parseFloat(numStr);
+        if (!isNaN(num)) {
+          args.push(num);
+        }
+      }
+      
+      return { address, args };
+    } catch {
+      return null;
+    }
+  }
 
-      if (target === 0) {
-        // Global controls
-        if (control === 100) {
-          // Scene selection
-          const sceneIndex = Math.floor(value);
-          if (sceneIndex >= 0 && sceneIndex < SCENES.length) {
-            const sceneName = SCENES[sceneIndex];
-            if (setScene(sceneName)) {
-              console.log(`OSC applied: target=0 (global), control=100 (scene), value=${sceneIndex} (${sceneName})`);
-            }
-          } else {
-            console.log(`OSC ignored: invalid scene index ${sceneIndex}`);
+  // Handle OSC command
+  function handleOscCommand(address: string, args: number[]) {
+    if (address !== "/conductor") return;
+    if (args.length < 3) {
+      console.log(`OSC ignored: need 3 arguments, got ${args.length}`);
+      return;
+    }
+
+    const target = Math.floor(args[0]);
+    const control = Math.floor(args[1]);
+    const value = args[2];
+
+    // Control codes:
+    // 1 = pitch
+    // 2 = interval (ms)
+    // 100 = scene (global)
+
+    if (target === 0) {
+      // Global controls
+      if (control === 100) {
+        // Scene selection
+        const sceneIndex = Math.floor(value);
+        if (sceneIndex >= 0 && sceneIndex < SCENES.length) {
+          const sceneName = SCENES[sceneIndex];
+          if (setScene(sceneName)) {
+            console.log(`OSC applied: target=0 (global), control=100 (scene), value=${sceneIndex} (${sceneName})`);
           }
+        } else {
+          console.log(`OSC ignored: invalid scene index ${sceneIndex}`);
         }
-      } else if (target === -1) {
-        // Apply to all players
-        const playerIds = getAllPlayerIds();
-        let appliedCount = 0;
+      }
+    } else if (target === -1) {
+      // Apply to all players
+      const playerIds = getAllPlayerIds();
+      let appliedCount = 0;
 
-        playerIds.forEach((playerId) => {
-          const socketId = getSocketIdFromPlayerId(playerId);
-          if (!socketId) return;
-
-          if (control === 1) {
-            // Pitch
-            if (setPlayerPitch(socketId, Math.floor(value))) {
-              appliedCount++;
-            }
-          } else if (control === 2) {
-            // Interval
-            if (setPlayerInterval(socketId, Math.floor(value))) {
-              appliedCount++;
-            }
-          }
-        });
-
-        if (appliedCount > 0) {
-          console.log(`OSC applied: target=-1 (all ${appliedCount} players), control=${control}, value=${value}`);
-        }
-      } else if (target > 0) {
-        // Specific player
-        const socketId = getSocketIdFromPlayerId(target);
-        if (!socketId) {
-          console.log(`OSC ignored: player ${target} not connected`);
-          return;
-        }
+      playerIds.forEach((playerId) => {
+        const socketId = getSocketIdFromPlayerId(playerId);
+        if (!socketId) return;
 
         if (control === 1) {
           // Pitch
           if (setPlayerPitch(socketId, Math.floor(value))) {
-            console.log(`OSC applied: target=${target}, control=1 (pitch), value=${Math.floor(value)}`);
+            appliedCount++;
           }
         } else if (control === 2) {
           // Interval
           if (setPlayerInterval(socketId, Math.floor(value))) {
-            console.log(`OSC applied: target=${target}, control=2 (interval), value=${Math.floor(value)}`);
+            appliedCount++;
           }
+        }
+      });
+
+      if (appliedCount > 0) {
+        console.log(`OSC applied: target=-1 (all ${appliedCount} players), control=${control}, value=${value}`);
+      }
+    } else if (target > 0) {
+      // Specific player
+      const socketId = getSocketIdFromPlayerId(target);
+      if (!socketId) {
+        console.log(`OSC ignored: player ${target} not connected`);
+        return;
+      }
+
+      if (control === 1) {
+        // Pitch
+        if (setPlayerPitch(socketId, Math.floor(value))) {
+          console.log(`OSC applied: target=${target}, control=1 (pitch), value=${Math.floor(value)}`);
+        }
+      } else if (control === 2) {
+        // Interval
+        if (setPlayerInterval(socketId, Math.floor(value))) {
+          console.log(`OSC applied: target=${target}, control=2 (interval), value=${Math.floor(value)}`);
         }
       }
     }
+  }
+
+  udpServer.on("message", (msg: Buffer) => {
+    // Try parsing as binary OSC first
+    let parsed = parseOscBinary(msg);
+    
+    if (!parsed) {
+      // Fall back to raw text parsing
+      const text = msg.toString("utf8");
+      parsed = parseRawText(text);
+    }
+    
+    if (parsed) {
+      handleOscCommand(parsed.address, parsed.args);
+    } else {
+      console.log(`OSC ignored: could not parse message`);
+    }
   });
 
-  oscServer.on("error", (err: Error) => {
-    console.error("OSC Server error:", err);
+  udpServer.on("error", (err: Error) => {
+    console.error("UDP/OSC Server error:", err);
   });
 
-  console.log(`OSC server listening on 127.0.0.1:${OSC_PORT}`);
+  udpServer.bind(OSC_PORT, "127.0.0.1", () => {
+    console.log(`UDP/OSC server listening on 127.0.0.1:${OSC_PORT} (supports binary OSC and raw text)`);
+  });
 
   io.on("connection", (socket) => {
     console.log(`Client connected: ${socket.id}`);
