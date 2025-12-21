@@ -1,7 +1,7 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Music, Users } from "lucide-react";
+import { Wand2, Users } from "lucide-react";
 
 export default function Landing() {
   const [, setLocation] = useLocation();
@@ -26,7 +26,7 @@ export default function Landing() {
           >
             <CardHeader className="text-center pb-4">
               <div className="mx-auto mb-4 w-16 h-16 rounded-full border border-border flex items-center justify-center">
-                <Music className="w-7 h-7 text-foreground" />
+                <Wand2 className="w-7 h-7 text-foreground" />
               </div>
               <CardTitle className="text-xl font-medium tracking-tight">Conductor</CardTitle>
               <CardDescription className="text-muted-foreground font-light">
