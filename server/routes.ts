@@ -1,9 +1,13 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { Server as SocketIOServer } from "socket.io";
-import type { PlayerState, AppState } from "@shared/schema";
+import type { PlayerState, AppState, Mp3Slot, Mp3SyncState, Mp3PlayState, Mp3PlayerReady } from "@shared/schema";
+import { MAX_SLOTS } from "@shared/schema";
 import { resolveControl } from "@shared/controls";
 import * as dgram from "dgram";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 
 // In-memory state
 const players: Record<string, PlayerState> = {};
@@ -22,6 +26,56 @@ const socketIdToPlayerId: Map<string, number> = new Map();
 
 // Scene definitions for OSC numeric control
 const SCENES = ["audioScore"]; // Index 0 = audioScore, add more as needed
+
+// ========== MP3 Sync Tool State ==========
+const UPLOADS_DIR = path.join(process.cwd(), "uploads");
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+
+// File storage: fileId -> { filePath, fileName }
+const fileStorage: Map<string, { filePath: string; fileName: string }> = new Map();
+
+// Initialize MP3 slots
+const mp3Slots: Mp3Slot[] = [];
+for (let i = 0; i < MAX_SLOTS; i++) {
+  mp3Slots.push({
+    slotIndex: i,
+    playerSocketId: null,
+    playerName: null,
+    fileId: null,
+    fileName: null,
+    ready: false,
+    duration: null,
+  });
+}
+
+// MP3 playback state
+let mp3PlayState: Mp3PlayState | null = null;
+
+// MP3 player sockets (separate from synth tool players)
+const mp3PlayerSockets = new Set<string>();
+const mp3ConductorSockets = new Set<string>();
+
+function getMp3SyncState(): Mp3SyncState {
+  return {
+    slots: mp3Slots,
+    playState: mp3PlayState,
+  };
+}
+
+function findLowestFreeSlot(): number {
+  for (let i = 0; i < MAX_SLOTS; i++) {
+    if (mp3Slots[i].playerSocketId === null) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+function generateFileId(): string {
+  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
 
 // Get full state for conductors
 function getFullState(): AppState {
@@ -332,6 +386,90 @@ export async function registerRoutes(
     console.log(`UDP/OSC server listening on 127.0.0.1:${OSC_PORT} (supports binary OSC and raw text)`);
   });
 
+  // ========== MP3 Sync HTTP Endpoints ==========
+  const upload = multer({
+    storage: multer.diskStorage({
+      destination: UPLOADS_DIR,
+      filename: (req, file, cb) => {
+        const fileId = generateFileId();
+        const ext = path.extname(file.originalname);
+        cb(null, `${fileId}${ext}`);
+      },
+    }),
+    limits: { fileSize: 15 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+      if (file.mimetype === "audio/mpeg" || file.originalname.toLowerCase().endsWith(".mp3")) {
+        cb(null, true);
+      } else {
+        cb(new Error("Only MP3 files are allowed"));
+      }
+    },
+  });
+
+  app.post("/api/upload/slot/:slotIndex", (req, res, next) => {
+    upload.single("file")(req, res, (err) => {
+      if (err) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res.status(413).json({ error: "File too large (max 15MB)" });
+        }
+        return res.status(400).json({ error: err.message || "Upload failed" });
+      }
+      next();
+    });
+  }, (req, res) => {
+    const slotIndex = parseInt(req.params.slotIndex, 10);
+    if (isNaN(slotIndex) || slotIndex < 0 || slotIndex >= MAX_SLOTS) {
+      return res.status(400).json({ error: "Invalid slot index" });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    const safeFileName = path.basename(req.file.originalname).replace(/[^a-zA-Z0-9._-]/g, "_");
+    const fileId = path.basename(req.file.filename, path.extname(req.file.filename));
+
+    fileStorage.set(fileId, { filePath: req.file.path, fileName: safeFileName });
+
+    mp3Slots[slotIndex].fileId = fileId;
+    mp3Slots[slotIndex].fileName = safeFileName;
+    mp3Slots[slotIndex].ready = false;
+    mp3Slots[slotIndex].duration = null;
+
+    console.log(`MP3 uploaded for slot ${slotIndex}: ${safeFileName} (${fileId})`);
+
+    io.to("mp3conductors").emit("mp3StateUpdate", getMp3SyncState());
+
+    const playerSocketId = mp3Slots[slotIndex].playerSocketId;
+    if (playerSocketId) {
+      io.to(playerSocketId).emit("mp3Assignment", {
+        slotIndex,
+        fileId,
+        fileName: safeFileName,
+      });
+    }
+
+    res.json({ fileId, fileName: safeFileName, slotIndex });
+  });
+
+  app.get("/api/files/:fileId", (req, res) => {
+    const fileId = req.params.fileId;
+    
+    if (!fileId || fileId.includes("..") || fileId.includes("/") || fileId.includes("\\")) {
+      return res.status(400).json({ error: "Invalid file ID" });
+    }
+    
+    const fileInfo = fileStorage.get(fileId);
+
+    if (!fileInfo) {
+      return res.status(404).json({ error: "File not found" });
+    }
+
+    res.setHeader("Content-Type", "audio/mpeg");
+    res.setHeader("Content-Disposition", `inline; filename="${fileInfo.fileName}"`);
+    res.sendFile(fileInfo.filePath);
+  });
+
   io.on("connection", (socket) => {
     console.log(`Client connected: ${socket.id}`);
 
@@ -505,6 +643,119 @@ export async function registerRoutes(
       }
     });
 
+    // ========== MP3 Sync Socket Events ==========
+
+    socket.on("joinMp3Player", (data: { name: string }) => {
+      if (!data.name || typeof data.name !== "string") {
+        socket.emit("mp3JoinError", { error: "Invalid name" });
+        return;
+      }
+
+      const slotIndex = findLowestFreeSlot();
+      if (slotIndex === -1) {
+        socket.emit("mp3JoinError", { error: "No slots available" });
+        return;
+      }
+
+      mp3PlayerSockets.add(socket.id);
+      socket.join("mp3players");
+
+      mp3Slots[slotIndex].playerSocketId = socket.id;
+      mp3Slots[slotIndex].playerName = data.name.slice(0, 50);
+      mp3Slots[slotIndex].ready = false;
+
+      socket.emit("mp3JoinSuccess", {
+        slotIndex,
+        fileId: mp3Slots[slotIndex].fileId,
+        fileName: mp3Slots[slotIndex].fileName,
+      });
+
+      io.to("mp3conductors").emit("mp3StateUpdate", getMp3SyncState());
+
+      console.log(`MP3 Player joined: slot ${slotIndex} - ${data.name} (${socket.id})`);
+
+      if (mp3PlayState && mp3PlayState.playing && mp3Slots[slotIndex].fileId) {
+        const currentPlayheadSeconds =
+          mp3PlayState.seekSeconds + (Date.now() - mp3PlayState.serverStartTimeMs) / 1000;
+        
+        socket.emit("mp3Play", {
+          playId: mp3PlayState.playId,
+          serverStartTimeMs: Date.now() + 500,
+          seekSeconds: currentPlayheadSeconds,
+          slotIndex,
+          fileId: mp3Slots[slotIndex].fileId,
+        });
+      }
+    });
+
+    socket.on("joinMp3Conductor", () => {
+      mp3ConductorSockets.add(socket.id);
+      socket.join("mp3conductors");
+
+      socket.emit("mp3FullState", getMp3SyncState());
+
+      console.log(`MP3 Conductor joined (${socket.id})`);
+    });
+
+    socket.on("mp3Ready", (data: Mp3PlayerReady) => {
+      if (!mp3PlayerSockets.has(socket.id)) return;
+
+      const slot = mp3Slots.find(s => s.playerSocketId === socket.id);
+      if (!slot) return;
+
+      if (slot.slotIndex === data.slotIndex && slot.fileId === data.fileId) {
+        slot.ready = data.ready;
+        slot.duration = data.duration;
+
+        io.to("mp3conductors").emit("mp3StateUpdate", getMp3SyncState());
+        console.log(`MP3 Player ready: slot ${data.slotIndex}, duration ${data.duration}s`);
+      }
+    });
+
+    socket.on("mp3Play", (data: { seekSeconds: number }) => {
+      if (!mp3ConductorSockets.has(socket.id)) return;
+
+      const playId = generateFileId();
+      const serverStartTimeMs = Date.now() + 2000;
+      const seekSeconds = data.seekSeconds || 0;
+
+      mp3PlayState = {
+        playing: true,
+        playId,
+        serverStartTimeMs,
+        seekSeconds,
+      };
+
+      mp3Slots.forEach((slot) => {
+        if (slot.playerSocketId && slot.fileId) {
+          io.to(slot.playerSocketId).emit("mp3Play", {
+            playId,
+            serverStartTimeMs,
+            seekSeconds,
+            slotIndex: slot.slotIndex,
+            fileId: slot.fileId,
+          });
+        }
+      });
+
+      io.to("mp3conductors").emit("mp3StateUpdate", getMp3SyncState());
+      console.log(`MP3 Play started: playId=${playId}, seek=${seekSeconds}s`);
+    });
+
+    socket.on("mp3Stop", () => {
+      if (!mp3ConductorSockets.has(socket.id)) return;
+
+      if (mp3PlayState) {
+        const playId = mp3PlayState.playId;
+        mp3PlayState = null;
+
+        io.to("mp3players").emit("mp3Stop", { playId });
+        io.to("mp3conductors").emit("mp3StateUpdate", getMp3SyncState());
+
+        console.log(`MP3 Play stopped: playId=${playId}`);
+      }
+    });
+
     // Handle disconnect
     socket.on("disconnect", () => {
       console.log(`Client disconnected: ${socket.id}`);
@@ -541,6 +792,29 @@ export async function registerRoutes(
         io.to("conductors").emit("stateUpdate", getFullState());
 
         console.log(`Conductor left. Remaining conductors: ${conductorCount}`);
+      }
+
+      // If it was an MP3 player
+      if (mp3PlayerSockets.has(socket.id)) {
+        mp3PlayerSockets.delete(socket.id);
+
+        // Free the slot but keep file assignment
+        const slot = mp3Slots.find(s => s.playerSocketId === socket.id);
+        if (slot) {
+          console.log(`MP3 Player disconnected: slot ${slot.slotIndex} - ${slot.playerName}`);
+          slot.playerSocketId = null;
+          slot.playerName = null;
+          slot.ready = false;
+          // Keep fileId and fileName for the slot
+        }
+
+        io.to("mp3conductors").emit("mp3StateUpdate", getMp3SyncState());
+      }
+
+      // If it was an MP3 conductor
+      if (mp3ConductorSockets.has(socket.id)) {
+        mp3ConductorSockets.delete(socket.id);
+        console.log(`MP3 Conductor left (${socket.id})`);
       }
     });
   });

@@ -6,6 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Landing from "@/pages/landing";
 import Player from "@/pages/player";
 import Conductor from "@/pages/conductor";
+import Mp3Conductor from "@/pages/mp3-conductor";
+import Mp3Player from "@/pages/mp3-player";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -14,6 +16,8 @@ function Router() {
       <Route path="/" component={Landing} />
       <Route path="/player" component={Player} />
       <Route path="/conductor" component={Conductor} />
+      <Route path="/tool/mp3sync" component={Mp3Conductor} />
+      <Route path="/player/mp3sync" component={Mp3Player} />
       <Route component={NotFound} />
     </Switch>
   );
