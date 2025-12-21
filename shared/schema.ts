@@ -76,3 +76,73 @@ export function midiToNoteName(midi: number): string {
 export function midiToFrequency(midi: number): number {
   return 440 * Math.pow(2, (midi - 69) / 12);
 }
+
+// ========== MP3 Sync Tool Types ==========
+
+export const MAX_SLOTS = 8;
+
+export interface Mp3Slot {
+  slotIndex: number;
+  playerSocketId: string | null;
+  playerName: string | null;
+  fileId: string | null;
+  fileName: string | null;
+  ready: boolean;
+  duration: number | null;
+}
+
+export interface Mp3PlayState {
+  playing: boolean;
+  playId: string;
+  serverStartTimeMs: number;
+  seekSeconds: number;
+}
+
+export interface Mp3SyncState {
+  slots: Mp3Slot[];
+  playState: Mp3PlayState | null;
+}
+
+// Events from conductor
+export interface Mp3UploadEvent {
+  slotIndex: number;
+  fileId: string;
+  fileName: string;
+}
+
+export interface Mp3PlayEvent {
+  playId: string;
+  serverStartTimeMs: number;
+  seekSeconds: number;
+}
+
+export interface Mp3StopEvent {
+  playId: string;
+}
+
+// Events to player
+export interface Mp3PlayerAssignment {
+  slotIndex: number;
+  fileId: string | null;
+  fileName: string | null;
+}
+
+export interface Mp3PlayerPlay {
+  playId: string;
+  serverStartTimeMs: number;
+  seekSeconds: number;
+  slotIndex: number;
+  fileId: string;
+}
+
+export interface Mp3PlayerStop {
+  playId: string;
+}
+
+// Player readiness report
+export interface Mp3PlayerReady {
+  slotIndex: number;
+  fileId: string;
+  duration: number;
+  ready: boolean;
+}
