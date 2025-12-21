@@ -411,7 +411,7 @@ export async function registerRoutes(
         cb(null, `${fileId}${ext}`);
       },
     }),
-    limits: { fileSize: 15 * 1024 * 1024 },
+    limits: { fileSize: 80 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
       if (file.mimetype === "audio/mpeg" || file.originalname.toLowerCase().endsWith(".mp3")) {
         cb(null, true);
@@ -425,7 +425,7 @@ export async function registerRoutes(
     upload.single("file")(req, res, (err) => {
       if (err) {
         if (err.code === "LIMIT_FILE_SIZE") {
-          return res.status(413).json({ error: "File too large (max 15MB)" });
+          return res.status(413).json({ error: "File too large (max 80MB)" });
         }
         return res.status(400).json({ error: err.message || "Upload failed" });
       }
