@@ -14,7 +14,7 @@ export default function Landing() {
             Audio Score
           </h1>
           <p className="text-lg text-muted-foreground max-w-xl mx-auto font-light" data-testid="text-tagline">
-            Real-time collaborative music. Control the performance or receive your personalized score.
+            Control the performance as an audio conductor or follow the score as a player.
           </p>
         </div>
 
