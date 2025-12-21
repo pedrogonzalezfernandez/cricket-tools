@@ -73,6 +73,21 @@ function findLowestFreeSlot(): number {
   return -1;
 }
 
+function deleteFileFromDisk(fileId: string): void {
+  const fileInfo = fileStorage.get(fileId);
+  if (fileInfo) {
+    try {
+      if (fs.existsSync(fileInfo.filePath)) {
+        fs.unlinkSync(fileInfo.filePath);
+        console.log(`Deleted file from disk: ${fileInfo.fileName} (${fileId})`);
+      }
+    } catch (err) {
+      console.error(`Failed to delete file ${fileId}:`, err);
+    }
+    fileStorage.delete(fileId);
+  }
+}
+
 function generateFileId(): string {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
@@ -426,6 +441,11 @@ export async function registerRoutes(
       return res.status(400).json({ error: "No file uploaded" });
     }
 
+    const oldFileId = mp3Slots[slotIndex].fileId;
+    if (oldFileId) {
+      deleteFileFromDisk(oldFileId);
+    }
+
     const safeFileName = path.basename(req.file.originalname).replace(/[^a-zA-Z0-9._-]/g, "_");
     const fileId = path.basename(req.file.filename, path.extname(req.file.filename));
 
@@ -468,6 +488,37 @@ export async function registerRoutes(
     res.setHeader("Content-Type", "audio/mpeg");
     res.setHeader("Content-Disposition", `inline; filename="${fileInfo.fileName}"`);
     res.sendFile(fileInfo.filePath);
+  });
+
+  app.delete("/api/slot/:slotIndex/file", (req, res) => {
+    const slotIndex = parseInt(req.params.slotIndex, 10);
+    if (isNaN(slotIndex) || slotIndex < 0 || slotIndex >= MAX_SLOTS) {
+      return res.status(400).json({ error: "Invalid slot index" });
+    }
+
+    const slot = mp3Slots[slotIndex];
+    const fileId = slot.fileId;
+    
+    if (!fileId) {
+      return res.status(404).json({ error: "No file in this slot" });
+    }
+
+    deleteFileFromDisk(fileId);
+
+    slot.fileId = null;
+    slot.fileName = null;
+    slot.ready = false;
+    slot.duration = null;
+
+    console.log(`MP3 deleted from slot ${slotIndex}`);
+
+    io.to("mp3conductors").emit("mp3StateUpdate", getMp3SyncState());
+
+    if (slot.playerSocketId) {
+      io.to(slot.playerSocketId).emit("mp3FileRemoved", { slotIndex });
+    }
+
+    res.json({ success: true, slotIndex });
   });
 
   io.on("connection", (socket) => {

@@ -186,11 +186,24 @@ export default function Mp3Player() {
       stopPlayback();
     };
 
+    const onFileRemoved = (data: { slotIndex: number }) => {
+      if (data.slotIndex === slotIndex) {
+        stopPlayback();
+        setAssignedFile({ fileId: null, fileName: null });
+        setIsReady(false);
+        setDuration(null);
+        audioBufferRef.current = null;
+        currentFileIdRef.current = null;
+        console.log("File removed from slot");
+      }
+    };
+
     socket.on("mp3JoinSuccess", onJoinSuccess);
     socket.on("mp3JoinError", onJoinError);
     socket.on("mp3Assignment", onAssignment);
     socket.on("mp3Play", onPlay);
     socket.on("mp3Stop", onStop);
+    socket.on("mp3FileRemoved", onFileRemoved);
 
     return () => {
       socket.off("mp3JoinSuccess", onJoinSuccess);
@@ -198,6 +211,7 @@ export default function Mp3Player() {
       socket.off("mp3Assignment", onAssignment);
       socket.off("mp3Play", onPlay);
       socket.off("mp3Stop", onStop);
+      socket.off("mp3FileRemoved", onFileRemoved);
     };
   }, [socket, slotIndex, loadAudioFile, schedulePlayback, stopPlayback]);
 

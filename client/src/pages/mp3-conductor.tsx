@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useSocket } from "@/hooks/use-socket";
-import { ArrowLeft, Upload, Play, Square, Music, User, CheckCircle, Clock } from "lucide-react";
+import { ArrowLeft, Upload, Play, Square, Music, User, CheckCircle, Clock, Trash2 } from "lucide-react";
 import type { Mp3SyncState, Mp3Slot } from "@shared/schema";
 import { MAX_SLOTS } from "@shared/schema";
 
@@ -93,6 +93,20 @@ export default function Mp3Conductor() {
       socket.emit("mp3Stop");
     }
   }, [socket]);
+
+  const handleDeleteFile = useCallback(async (slotIndex: number) => {
+    try {
+      const response = await fetch(`/api/slot/${slotIndex}/file`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        console.error("Delete failed:", error);
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
+    }
+  }, []);
 
   if (!isConnected) {
     return (
@@ -215,11 +229,24 @@ export default function Mp3Conductor() {
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2 text-sm">
-                  <Music className="w-4 h-4 text-muted-foreground" />
-                  <span className={slot.fileName ? "text-foreground truncate" : "text-muted-foreground"} title={slot.fileName || undefined}>
-                    {slot.fileName || "No file"}
-                  </span>
+                <div className="flex items-center justify-between gap-2 text-sm">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Music className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <span className={slot.fileName ? "text-foreground truncate" : "text-muted-foreground"} title={slot.fileName || undefined}>
+                      {slot.fileName || "No file"}
+                    </span>
+                  </div>
+                  {slot.fileId && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0 text-muted-foreground hover:text-destructive"
+                      onClick={() => handleDeleteFile(slot.slotIndex)}
+                      data-testid={`button-delete-${slot.slotIndex}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
 
                 {slot.duration !== null && (
