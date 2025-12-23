@@ -19,41 +19,40 @@ export default function LivePlay() {
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-center p-6">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-sm">
           <div className="text-center mb-10">
             <h1 className="text-3xl font-light tracking-tight text-foreground mb-3" data-testid="text-title">
               Live Play
             </h1>
             <p className="text-muted-foreground font-light" data-testid="text-subtitle">
-              Real-time score transmission.
+              Real-time score transmission
             </p>
           </div>
 
           <div className="space-y-4">
-            <Button
-              className="w-full py-6 flex flex-col items-center gap-1"
+            <button
+              className="group w-full py-5 px-6 rounded-xl border border-border bg-card text-card-foreground shadow-sm transition-all duration-300 ease-out hover:bg-foreground hover:text-background hover:border-foreground hover:shadow-lg active:scale-[0.98]"
               onClick={() => setLocation("/LivePlay/Conductor")}
               data-testid="button-conductor"
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-3 mb-1">
                 <Wand2 className="w-5 h-5" />
                 <span className="text-lg font-medium">Conductor</span>
               </div>
-              <span className="text-sm opacity-80 font-light">Control the session.</span>
-            </Button>
+              <p className="text-sm opacity-70 font-light">Control the performance</p>
+            </button>
 
-            <Button
-              variant="outline"
-              className="w-full py-6 flex flex-col items-center gap-1"
+            <button
+              className="group w-full py-5 px-6 rounded-xl border border-border bg-card text-card-foreground shadow-sm transition-all duration-300 ease-out hover:bg-foreground hover:text-background hover:border-foreground hover:shadow-lg active:scale-[0.98]"
               onClick={() => setLocation("/LivePlay/Player")}
               data-testid="button-player"
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-3 mb-1">
                 <Users className="w-5 h-5" />
                 <span className="text-lg font-medium">Player</span>
               </div>
-              <span className="text-sm opacity-80 font-light">Follow the score.</span>
-            </Button>
+              <p className="text-sm opacity-70 font-light">Receive your score</p>
+            </button>
           </div>
         </div>
       </main>
