@@ -22,7 +22,7 @@ const buttonVariants = cva(
         // Add a transparent border so that when someone toggles a border on later, it doesn't shift layout/size.
         ghost: "border border-transparent",
         // Navigation variant: light background that transitions to dark on hover (Apple-style)
-        nav: "no-default-hover-elevate bg-card text-card-foreground border border-border shadow-sm transition-all duration-300 ease-out hover:bg-foreground hover:text-background hover:border-foreground hover:shadow-lg active:scale-[0.98]",
+        nav: "no-default-hover-elevate bg-card text-card-foreground border border-foreground/30 shadow-sm transition-all duration-300 ease-out hover:bg-foreground hover:text-background hover:border-foreground hover:shadow-lg active:scale-[0.98]",
       },
       // Heights are set as "min" heights, because sometimes Ai will place large amount of content
       // inside buttons. With a min-height they will look appropriate with small amounts of content,
