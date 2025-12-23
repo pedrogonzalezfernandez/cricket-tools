@@ -1,5 +1,6 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { NavButton } from "@/components/ui/nav-button";
 import { ArrowLeft, Wand2, Users } from "lucide-react";
 
 export default function LivePlay() {
@@ -30,29 +31,21 @@ export default function LivePlay() {
           </div>
 
           <div className="space-y-4">
-            <button
-              className="group w-full py-5 px-6 rounded-xl border border-border bg-card text-card-foreground shadow-sm transition-all duration-300 ease-out hover:bg-foreground hover:text-background hover:border-foreground hover:shadow-lg active:scale-[0.98]"
+            <NavButton
+              icon={Wand2}
+              title="Conductor"
+              description="Control the performance"
               onClick={() => setLocation("/LivePlay/Conductor")}
               data-testid="button-conductor"
-            >
-              <div className="flex items-center justify-center gap-3 mb-1">
-                <Wand2 className="w-5 h-5" />
-                <span className="text-lg font-medium">Conductor</span>
-              </div>
-              <p className="text-sm opacity-70 font-light">Control the performance</p>
-            </button>
+            />
 
-            <button
-              className="group w-full py-5 px-6 rounded-xl border border-border bg-card text-card-foreground shadow-sm transition-all duration-300 ease-out hover:bg-foreground hover:text-background hover:border-foreground hover:shadow-lg active:scale-[0.98]"
+            <NavButton
+              icon={Users}
+              title="Player"
+              description="Receive your score"
               onClick={() => setLocation("/LivePlay/Player")}
               data-testid="button-player"
-            >
-              <div className="flex items-center justify-center gap-3 mb-1">
-                <Users className="w-5 h-5" />
-                <span className="text-lg font-medium">Player</span>
-              </div>
-              <p className="text-sm opacity-70 font-light">Receive your score</p>
-            </button>
+            />
           </div>
         </div>
       </main>

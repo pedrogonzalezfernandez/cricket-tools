@@ -1,5 +1,6 @@
 import { useLocation } from "wouter";
 import { Radio, Music } from "lucide-react";
+import { NavButton } from "@/components/ui/nav-button";
 import cricketToolsLogo from "@assets/CricketTools_1766517253872.png";
 
 export default function Landing() {
@@ -21,29 +22,21 @@ export default function Landing() {
         </div>
 
         <div className="w-full space-y-4">
-          <button
-            className="group w-full py-5 px-6 rounded-xl border border-border bg-card text-card-foreground shadow-sm transition-all duration-300 ease-out hover:bg-foreground hover:text-background hover:border-foreground hover:shadow-lg active:scale-[0.98]"
+          <NavButton
+            icon={Radio}
+            title="Live Play"
+            description="Real-time synth scoring"
             onClick={() => setLocation("/LivePlay")}
             data-testid="button-live-play"
-          >
-            <div className="flex items-center justify-center gap-3 mb-1">
-              <Radio className="w-5 h-5" />
-              <span className="text-lg font-medium">Live Play</span>
-            </div>
-            <p className="text-sm opacity-70 font-light">Real-time synth scoring</p>
-          </button>
+          />
 
-          <button
-            className="group w-full py-5 px-6 rounded-xl border border-border bg-card text-card-foreground shadow-sm transition-all duration-300 ease-out hover:bg-foreground hover:text-background hover:border-foreground hover:shadow-lg active:scale-[0.98]"
+          <NavButton
+            icon={Music}
+            title="MP3 Sync"
+            description="Synchronized audio playback"
             onClick={() => setLocation("/MP3Sync")}
             data-testid="button-mp3-sync"
-          >
-            <div className="flex items-center justify-center gap-3 mb-1">
-              <Music className="w-5 h-5" />
-              <span className="text-lg font-medium">MP3 Sync</span>
-            </div>
-            <p className="text-sm opacity-70 font-light">Synchronized audio playback</p>
-          </button>
+          />
         </div>
       </div>
     </div>
