@@ -1,11 +1,12 @@
-# Audio Score - Real-Time Multi-User Conductor/Player App
+# Cricket Tools - Real-Time Multi-User Conductor/Player App
 
 ## Overview
-A real-time collaborative music application where Conductors control audio parameters for Players who receive personalized visual and audio scores.
+Cricket Tools - Utilities for online audio scoring on mobile devices. A real-time collaborative music application where Conductors control audio parameters for Players who receive personalized visual and audio scores.
 
 ## Current State
 MVP complete with full functionality:
-- Two user roles: Conductor and Player
+- Two tools: Live Play (real-time synth scoring) and MP3 Sync (synchronized audio playback)
+- Two user roles per tool: Conductor and Player
 - Real-time WebSocket communication via Socket.IO
 - Audio synthesis using Tone.js
 - Canvas-based circular score visualization
@@ -15,9 +16,13 @@ MVP complete with full functionality:
 ## Architecture
 
 ### Frontend (React + Vite)
-- `/` - Landing page with role selection
-- `/player` - Player flow: name entry → waiting room → audio score
-- `/conductor` - Dashboard with scene selector and per-player controls
+- `/` - Home page with Cricket Tools logo and tool selection (Live Play / MP3 Sync)
+- `/LivePlay` - Live Play mode selection (Conductor / Player)
+- `/LivePlay/Conductor` - Dashboard with scene selector and per-player controls
+- `/LivePlay/Player` - Player flow: name entry → waiting room → audio score
+- `/MP3Sync` - MP3 Sync mode selection (Conductor / Player)
+- `/MP3Sync/Conductor` - MP3 upload, slot assignment, and playback controls
+- `/MP3Sync/Player` - Player flow: name entry → file assignment → synchronized playback
 
 ### Backend (Express + Socket.IO + OSC)
 - WebSocket server handles all real-time communication
@@ -26,9 +31,13 @@ MVP complete with full functionality:
 - OSC UDP server for external control
 
 ### Key Components
-- `client/src/pages/landing.tsx` - Role selection cards
-- `client/src/pages/player.tsx` - Full player experience (name, waiting, audio score)
-- `client/src/pages/conductor.tsx` - Dashboard with player controls
+- `client/src/pages/landing.tsx` - Home with Cricket Tools logo and tool selection
+- `client/src/pages/live-play.tsx` - Live Play mode selection (Conductor/Player)
+- `client/src/pages/mp3-sync.tsx` - MP3 Sync mode selection (Conductor/Player)
+- `client/src/pages/player.tsx` - Live Play player experience (name, waiting, audio score)
+- `client/src/pages/conductor.tsx` - Live Play conductor dashboard with player controls
+- `client/src/pages/mp3-player.tsx` - MP3 Sync player experience
+- `client/src/pages/mp3-conductor.tsx` - MP3 Sync conductor dashboard
 - `client/src/hooks/use-socket.ts` - Socket.IO hooks for both roles
 - `server/routes.ts` - Socket.IO event handlers + OSC listener
 
