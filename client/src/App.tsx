@@ -4,6 +4,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Landing from "@/pages/landing";
+import LivePlay from "@/pages/live-play";
+import Mp3Sync from "@/pages/mp3-sync";
 import Player from "@/pages/player";
 import Conductor from "@/pages/conductor";
 import Mp3Conductor from "@/pages/mp3-conductor";
@@ -14,10 +16,12 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
-      <Route path="/player" component={Player} />
-      <Route path="/conductor" component={Conductor} />
-      <Route path="/tool/mp3sync" component={Mp3Conductor} />
-      <Route path="/player/mp3sync" component={Mp3Player} />
+      <Route path="/LivePlay" component={LivePlay} />
+      <Route path="/LivePlay/Conductor" component={Conductor} />
+      <Route path="/LivePlay/Player" component={Player} />
+      <Route path="/MP3Sync" component={Mp3Sync} />
+      <Route path="/MP3Sync/Conductor" component={Mp3Conductor} />
+      <Route path="/MP3Sync/Player" component={Mp3Player} />
       <Route component={NotFound} />
     </Switch>
   );

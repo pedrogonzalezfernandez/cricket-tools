@@ -1,149 +1,45 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Wand2, Users, Music, Headphones } from "lucide-react";
+import cricketToolsLogo from "@assets/CricketTools_1766517253872.png";
 
 export default function Landing() {
   const [, setLocation] = useLocation();
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6">
-      <div className="max-w-4xl w-full">
-        <div className="text-center mb-12 animate-fade-in">
-          <h1 className="text-4xl md:text-6xl font-light tracking-tight text-foreground mb-6" data-testid="text-title">
-            Audio Score
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-10">
+          <img 
+            src={cricketToolsLogo} 
+            alt="Cricket Tools" 
+            className="mx-auto mb-6 w-48 h-auto dark:invert"
+            data-testid="img-logo"
+          />
+          <h1 className="text-3xl font-light tracking-tight text-foreground mb-3" data-testid="text-title">
+            Cricket Tools
           </h1>
-          <p className="text-lg text-muted-foreground max-w-xl mx-auto font-light" data-testid="text-tagline">
-            Control the performance as an audio conductor or follow the score as a player.
+          <p className="text-muted-foreground font-light" data-testid="text-tagline">
+            Utilities for online audio scoring on mobile devices
           </p>
         </div>
 
-        <div className="mb-8">
-          <h2 className="text-center text-sm font-medium text-muted-foreground mb-4 uppercase tracking-wider">
-            Synth Tool
-          </h2>
-          <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-            <Card 
-              className="card-hover cursor-pointer animate-fade-in stagger-1 opacity-0"
-              onClick={() => setLocation("/conductor")}
-              data-testid="card-conductor"
-            >
-              <CardHeader className="text-center pb-4">
-                <div className="mx-auto mb-4 w-16 h-16 rounded-full border border-border flex items-center justify-center">
-                  <Wand2 className="w-7 h-7 text-foreground" />
-                </div>
-                <CardTitle className="text-xl font-medium tracking-tight">Conductor</CardTitle>
-                <CardDescription className="text-muted-foreground font-light">
-                  Control the performance
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-center">
-                <Button 
-                  className="w-full" 
-                  data-testid="button-enter-conductor"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setLocation("/conductor");
-                  }}
-                >
-                  Enter
-                </Button>
-              </CardContent>
-            </Card>
+        <div className="space-y-4">
+          <Button
+            className="w-full py-6 text-lg"
+            onClick={() => setLocation("/LivePlay")}
+            data-testid="button-live-play"
+          >
+            Live Play
+          </Button>
 
-            <Card 
-              className="card-hover cursor-pointer animate-fade-in stagger-2 opacity-0"
-              onClick={() => setLocation("/player")}
-              data-testid="card-player"
-            >
-              <CardHeader className="text-center pb-4">
-                <div className="mx-auto mb-4 w-16 h-16 rounded-full border border-border flex items-center justify-center">
-                  <Users className="w-7 h-7 text-foreground" />
-                </div>
-                <CardTitle className="text-xl font-medium tracking-tight">Player</CardTitle>
-                <CardDescription className="text-muted-foreground font-light">
-                  Receive your score
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-center">
-                <Button 
-                  variant="outline"
-                  className="w-full" 
-                  data-testid="button-enter-player"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setLocation("/player");
-                  }}
-                >
-                  Enter
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        <div>
-          <h2 className="text-center text-sm font-medium text-muted-foreground mb-4 uppercase tracking-wider">
-            MP3 Sync Tool
-          </h2>
-          <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-            <Card 
-              className="card-hover cursor-pointer animate-fade-in stagger-1 opacity-0"
-              onClick={() => setLocation("/tool/mp3sync")}
-              data-testid="card-mp3-conductor"
-            >
-              <CardHeader className="text-center pb-4">
-                <div className="mx-auto mb-4 w-16 h-16 rounded-full border border-border flex items-center justify-center">
-                  <Music className="w-7 h-7 text-foreground" />
-                </div>
-                <CardTitle className="text-xl font-medium tracking-tight">MP3 Conductor</CardTitle>
-                <CardDescription className="text-muted-foreground font-light">
-                  Assign MP3s and sync playback
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-center">
-                <Button 
-                  className="w-full" 
-                  data-testid="button-enter-mp3-conductor"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setLocation("/tool/mp3sync");
-                  }}
-                >
-                  Enter
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card 
-              className="card-hover cursor-pointer animate-fade-in stagger-2 opacity-0"
-              onClick={() => setLocation("/player/mp3sync")}
-              data-testid="card-mp3-player"
-            >
-              <CardHeader className="text-center pb-4">
-                <div className="mx-auto mb-4 w-16 h-16 rounded-full border border-border flex items-center justify-center">
-                  <Headphones className="w-7 h-7 text-foreground" />
-                </div>
-                <CardTitle className="text-xl font-medium tracking-tight">MP3 Player</CardTitle>
-                <CardDescription className="text-muted-foreground font-light">
-                  Play synchronized MP3
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-center">
-                <Button 
-                  variant="outline"
-                  className="w-full" 
-                  data-testid="button-enter-mp3-player"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setLocation("/player/mp3sync");
-                  }}
-                >
-                  Enter
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
+          <Button
+            variant="outline"
+            className="w-full py-6 text-lg"
+            onClick={() => setLocation("/MP3Sync")}
+            data-testid="button-mp3-sync"
+          >
+            MP3 Sync
+          </Button>
         </div>
       </div>
     </div>

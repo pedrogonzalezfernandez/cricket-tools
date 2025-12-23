@@ -301,13 +301,13 @@ export default function Player() {
             variant="ghost" 
             size="icon" 
             className="absolute top-4 left-4"
-            onClick={() => setLocation("/")}
+            onClick={() => setLocation("/LivePlay")}
             data-testid="button-back"
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <CardHeader className="pt-12">
-            <CardTitle className="text-center text-xl font-medium tracking-tight">Join as Player</CardTitle>
+            <CardTitle className="text-center text-xl font-medium tracking-tight">Live Play — Player</CardTitle>
             <CardDescription className="text-center font-light">
               Enter your name to join
             </CardDescription>
@@ -357,7 +357,7 @@ export default function Player() {
         </div>
         <Button 
           variant="ghost" 
-          onClick={() => setLocation("/")}
+          onClick={() => setLocation("/LivePlay")}
           data-testid="button-leave"
         >
           Leave
@@ -407,7 +407,7 @@ export default function Player() {
         <Button 
           variant="ghost" 
           size="sm"
-          onClick={() => setLocation("/")}
+          onClick={() => setLocation("/LivePlay")}
           data-testid="button-exit"
         >
           Exit

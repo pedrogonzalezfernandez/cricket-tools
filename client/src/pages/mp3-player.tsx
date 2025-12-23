@@ -249,7 +249,7 @@ export default function Mp3Player() {
             <div className="mx-auto mb-4 w-16 h-16 rounded-full border border-border flex items-center justify-center">
               <Music className="w-7 h-7 text-foreground" />
             </div>
-            <CardTitle className="text-xl font-medium tracking-tight">Join MP3 Sync</CardTitle>
+            <CardTitle className="text-xl font-medium tracking-tight">MP3 Sync — Player</CardTitle>
             <CardDescription className="text-muted-foreground font-light">
               Enter your name to join the performance
             </CardDescription>
@@ -280,11 +280,11 @@ export default function Mp3Player() {
               <Button
                 variant="ghost"
                 className="w-full"
-                onClick={() => setLocation("/")}
+                onClick={() => setLocation("/MP3Sync")}
                 data-testid="button-back-landing"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Home
+                Back
               </Button>
             </div>
           </CardContent>
@@ -300,7 +300,7 @@ export default function Mp3Player() {
           <Button 
             variant="ghost" 
             size="icon"
-            onClick={() => setLocation("/")}
+            onClick={() => setLocation("/MP3Sync")}
             data-testid="button-back"
           >
             <ArrowLeft className="w-5 h-5" />

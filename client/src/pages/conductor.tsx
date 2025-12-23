@@ -42,7 +42,7 @@ export default function Conductor() {
             <Button 
               variant="ghost" 
               size="icon"
-              onClick={() => setLocation("/")}
+              onClick={() => setLocation("/LivePlay")}
               data-testid="button-back"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -50,7 +50,7 @@ export default function Conductor() {
             <div className="flex items-center gap-2">
               <Wand2 className="w-5 h-5 text-foreground" />
               <h1 className="text-lg font-medium tracking-tight" data-testid="text-conductor-title">
-                Conductor
+                Live Play — Conductor
               </h1>
             </div>
           </div>
