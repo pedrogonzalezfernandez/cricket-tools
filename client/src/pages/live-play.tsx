@@ -26,7 +26,7 @@ export default function LivePlay() {
               Live Play
             </h1>
             <p className="text-muted-foreground font-light" data-testid="text-subtitle">
-              Real-time score transmission
+              Real-time audio score creation
             </p>
           </div>
 
@@ -34,7 +34,7 @@ export default function LivePlay() {
             <NavButton
               icon={Wand2}
               title="Conductor"
-              description="Control the performance"
+              description="Design the score"
               onClick={() => setLocation("/LivePlay/Conductor")}
               data-testid="button-conductor"
             />
@@ -42,7 +42,7 @@ export default function LivePlay() {
             <NavButton
               icon={Users}
               title="Player"
-              description="Receive your score"
+              description="Follow the score"
               onClick={() => setLocation("/LivePlay/Player")}
               data-testid="button-player"
             />

@@ -17,7 +17,7 @@ export default function Landing() {
             data-testid="img-logo"
           />
           <p className="text-muted-foreground font-light" data-testid="text-tagline">
-            Utilities for online audio scoring across mobile devices
+            Utilities for online audio scoring on mobile devices
           </p>
         </div>
 
@@ -25,7 +25,7 @@ export default function Landing() {
           <NavButton
             icon={Radio}
             title="Live Play"
-            description="Real-time score transmission"
+            description="Real-time audio score creation"
             onClick={() => setLocation("/LivePlay")}
             data-testid="button-live-play"
           />
@@ -33,7 +33,7 @@ export default function Landing() {
           <NavButton
             icon={Music}
             title="MP3 Sync"
-            description="Synchronized audio playback"
+            description="Synchronized audio score playback"
             onClick={() => setLocation("/MP3Sync")}
             data-testid="button-mp3-sync"
           />

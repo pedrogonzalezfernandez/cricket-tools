@@ -26,7 +26,7 @@ export default function Mp3Sync() {
               MP3 Sync
             </h1>
             <p className="text-muted-foreground font-light" data-testid="text-subtitle">
-              Synchronized audio playback
+              Synchronized audio score playback
             </p>
           </div>
 
