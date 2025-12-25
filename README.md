@@ -243,11 +243,12 @@ Use `public/conductor-control.js` to control the Conductor from Max via Node for
 - `script/build.ts` builds client + bundles server into `dist/`
 
 ## License
-MIT
+Apache License 2.0
 
 ## Steps to push changes to GitHub 
-cd /Users/pedrogonzalez/Desktop/Cricket-Tools
-git status -sb           # quick sanity check
-git add -A               # stage all changes (adds, mods, deletions)
-git commit -m "Sync local changes"
-git push origin main     # swap main if you’re on a different branch
+
+1. cd to the root directory of the project
+2. git status -sb           # quick sanity check
+3. git add -A               # stage all changes (adds, mods, deletions)
+4. git commit -m "Sync local changes"
+5. git push origin main     # swap main if you’re on a different branch
