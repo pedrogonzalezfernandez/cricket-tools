@@ -1,174 +1,90 @@
-# Cricket Tools - Real-Time Multi-User Conductor/Player App
+# Cricket Tools
 
-## Overview
-Cricket Tools - Utilities for online audio scoring on mobile devices. A real-time collaborative music application where Conductors control audio parameters for Players who receive personalized visual and audio scores.
+<img src="client/public/favicon.png" alt="Cricket Tools" width="96" />
 
-## Current State
-MVP complete with full functionality:
-- Two tools: Live Play (real-time synth scoring) and MP3 Sync (synchronized audio playback)
-- Two user roles per tool: Conductor and Player
-- Real-time WebSocket communication via Socket.IO
-- Audio synthesis using Tone.js
-- Canvas-based circular score visualization
-- Clock sync for aligned playback
-- OSC control for external applications (Max/MSP, etc.)
+Cricket Tools is a real-time, multi-user conductor/player web app for mobile-friendly audio scoring: a Conductor controls parameters for multiple Players, who see a personalized visual score and hear synchronized audio.
 
-## Architecture
+## Contents
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Quick Start (Local)](#quick-start-local)
+- [Docker](#docker)
+- [OSC Control](#osc-control)
+- [Node for Max (Remote WebSocket)](#node-for-max-remote-websocket)
+- [Project Layout](#project-layout)
+- [License](#license)
 
-### Frontend (React + Vite)
-- `/` - Home page with Cricket Tools logo and tool selection (Live Play / MP3 Sync)
-- `/LivePlay` - Live Play mode selection (Conductor / Player)
-- `/LivePlay/Conductor` - Dashboard with scene selector and per-player controls
-- `/LivePlay/Player` - Player flow: name entry → waiting room → audio score
-- `/MP3Sync` - MP3 Sync mode selection (Conductor / Player)
-- `/MP3Sync/Conductor` - MP3 upload, slot assignment, and playback controls
-- `/MP3Sync/Player` - Player flow: name entry → file assignment → synchronized playback
+## Features
+- Two tools: **Live Play** (real-time synth scoring) and **MP3 Sync** (synchronized playback).
+- Two roles per tool: **Conductor** and **Player**.
+- Real-time updates via **Socket.IO** with clock sync for aligned playback.
+- Audio synthesis and timing using **Tone.js**.
+- OSC UDP input for external control (Max/MSP, etc.).
 
-### Backend (Express + Socket.IO + OSC)
-- WebSocket server handles all real-time communication
-- In-memory state management for players and conductors
-- Clock synchronization for audio timing
-- OSC UDP server for external control
+## Tech Stack
+- Frontend: React + Vite + Tailwind
+- Backend: Express + Socket.IO
+- Audio: Tone.js
+- Optional: OSC control (UDP)
 
-### Key Components
-- `client/src/pages/landing.tsx` - Home with Cricket Tools logo and tool selection
-- `client/src/pages/live-play.tsx` - Live Play mode selection (Conductor/Player)
-- `client/src/pages/mp3-sync.tsx` - MP3 Sync mode selection (Conductor/Player)
-- `client/src/pages/player.tsx` - Live Play player experience (name, waiting, audio score)
-- `client/src/pages/conductor.tsx` - Live Play conductor dashboard with player controls
-- `client/src/pages/mp3-player.tsx` - MP3 Sync player experience
-- `client/src/pages/mp3-conductor.tsx` - MP3 Sync conductor dashboard
-- `client/src/hooks/use-socket.ts` - Socket.IO hooks for both roles
-- `server/routes.ts` - Socket.IO event handlers + OSC listener
+## Quick Start (Local)
+Prereqs: Node.js + npm (or use your existing Conda `cricket` env from `README.txt`).
 
-## Data Model (shared/schema.ts)
-- `PlayerState` - playerId (numeric), socketId, name, pitch (MIDI 36-84), interval (50-3000ms), phaseStartServerTime
-- `AppState` - players map, conductor count, current scene, defaults, phase start time
+```
+npm install
+npm run dev
+```
 
-## Socket Events
-- `joinPlayer({name})` / `joinConductor()` - Role registration
-- `playerState` / `fullState` - Initial state on join
-- `conductorPresence({present})` - Broadcast when conductors join/leave
-- `playerUpdate({pitch, interval, scene, phaseStartServerTime})` - To specific player
-- `stateUpdate(fullState)` - To all conductors
-- `setPlayerPitch/setPlayerInterval/setScene` - Conductor controls
-- `syncPing/syncPong` - Clock synchronization
+Open `http://localhost:5001` (or from another device on the same network: `http://<your-ip>:5001`).
+
+### Production build
+```
+npm run build
+npm start
+```
+
+## Docker
+Build and run:
+```
+docker build -t cricket-tools .
+docker run --rm -p 5001:5001 -e NODE_ENV=production cricket-tools
+```
+
+If you want uploads persisted on your machine:
+```
+docker run --rm -p 5001:5001 -v "$(pwd)/uploads:/app/uploads" -e NODE_ENV=production cricket-tools
+```
 
 ## OSC Control
+Send OSC UDP to `127.0.0.1:9000`:
 
-Send OSC to `127.0.0.1:9000` (UDP)
-
-### Message Format
 ```
 /conductor <target> <control> <value>
 ```
 
-### Arguments
-- `target` (int): Who to control
-  - `0` = Global controls (scene)
-  - `1, 2, 3...` = Specific player by PlayerID
-  - `-1` = All connected players
-- `control` (int): Which parameter
-  - `1` = Pitch (MIDI note number 36-84)
-  - `2` = Interval (milliseconds 50-3000)
-  - `100` = Scene (global only, 0 = audioScore)
-- `value` (float/int): New value
+- `target` (int): `0` global, `1..N` player id, `-1` all players
+- `control` (int): `1` pitch (36–84), `2` interval (50–3000ms), `100` scene (global)
 
-### Examples
+Examples:
 ```
-/conductor 3 1 72      # Set PlayerID 3 pitch to 72 (C5)
-/conductor 3 2 800     # Set PlayerID 3 interval to 800ms
-/conductor -1 2 1200   # Set ALL players interval to 1200ms
-/conductor 0 100 0     # Set scene to audioScore (index 0)
+/conductor 3 1 72
+/conductor -1 2 1200
+/conductor 0 100 0
 ```
 
-### Behavior
-- OSC works even without a conductor browser tab open
-- If conductor tabs are open, UI updates immediately
-- Invalid player IDs are safely ignored
-- Values are clamped to valid ranges
-- Server logs: `OSC applied: target=..., control=..., value=...`
+## Node for Max (Remote WebSocket)
+Use `public/conductor-control.js` to control the Conductor over WebSocket from Max:
 
-## How to Test
+1. Copy `public/conductor-control.js` into your Max project folder
+2. In that folder: `npm install socket.io-client`
+3. In Max: create `[node.script conductor-control.js]`
 
-### Browser Testing
-1. Open two browser tabs
-2. Tab 1: Enter as Conductor
-3. Tab 2: Enter as Player, enter name, join
-4. Player will wait until conductor is present
-5. Once conductor joins, player can start audio
-6. Conductor can adjust pitch/interval sliders for each player
-7. Changes reflect immediately on player's audio and visual score
+## Project Layout
+- `client/` React UI (Vite)
+- `server/` Express + Socket.IO server
+- `shared/` shared types/schema/controls
+- `public/` static helper assets (served at `/public`)
+- `script/build.ts` builds client + bundles server into `dist/`
 
-### OSC Testing (Max/MSP example - LOCAL ONLY)
-1. Create a `[udpsend 127.0.0.1 9000]` object
-2. Send message: `/conductor 1 1 60` to set Player 1 pitch to C4
-3. Send message: `/conductor 1 2 500` to set Player 1 interval to 500ms
-
-**Note:** OSC only works when the server runs on the same machine as Max. For remote control, use Node for Max (below).
-
-## Node for Max Control (Remote WebSocket)
-
-For controlling the conductor from Max/MSP over the internet (when the app is hosted on Replit), use Node for Max with WebSocket:
-
-### Setup
-1. Download the script: `Cricket-Tools/public/conductor-control.js`
-2. Place it in your Max project folder
-3. Run `npm install socket.io-client` in that folder
-4. In Max, create `[node.script conductor-control.js]`
-
-### Usage in Max
-```
-Connect to server:
-  [message: connect https://your-app-url.replit.app]
-      |
-  [node.script conductor-control.js]
-
-Control a player (target, control, value):
-  [1]  [1]  [60]     <- player 1, control 1 (pitch), value 60
-   |    |     |
-  [pak i i i]
-      |
-  [prepend control]
-      |
-  [node.script conductor-control.js]
-```
-
-### Control IDs (audioScore scene)
-All commands use integers: `target control value`
-- **1** = Pitch (MIDI note 36-84)
-- **2** = Interval (milliseconds 50-3000)
-
-### Shorthand handlers:
-- `pitch <target> <value>` - Set player pitch (uses control ID 1)
-- `interval <target> <value>` - Set player interval (uses control ID 2)
-- `allpitch <value>` - Set all players pitch
-- `allinterval <value>` - Set all players interval
-
-### Control values:
-- **target**: 1, 2, 3... = specific player, -1 = all players
-- **control**: integer ID (1=pitch, 2=interval) or string ("pitch", "interval") for backwards compatibility
-- **pitch value**: MIDI note 36-84
-- **interval value**: milliseconds 50-3000
-
-## Control Registry
-
-Controls are defined in `shared/controls.ts` and are scene-aware. When adding new scenes with different controls, define them there. Control IDs correspond to slider positions in the conductor UI.
-
-## Mobile Audio Handling
-- Screen Wake Lock API keeps screen on during playback (iOS Safari 16.4+)
-- Animation continues even if audio is suspended (phone sleep)
-- Tap-anywhere overlay appears to resume audio after interruption
-- Silent note trick unlocks iOS audio on start and resume
-
-## Limitations
-- Browser audio requires user gesture (player must click "Start Audio")
-- In-memory state resets on server restart
-- Scene 1 (Audio Score) only - future scenes planned
-- Player IDs are session-stable only (reset on server restart)
-- Wake Lock works best in iOS Home Screen Web Apps (PWA mode)
-
-## User Preferences
-- Clean, minimal UI following Apple HIG design
-- Responsive layout for all screen sizes
-- Real-time feedback with smooth animations
+## License
+MIT
