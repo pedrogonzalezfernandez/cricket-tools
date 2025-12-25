@@ -1,6 +1,6 @@
 # Cricket Tools
 
-<img src="client/public/favicon.png" alt="Cricket Tools" width="400" />
+<img src="client/public/favicon.png" alt="Cricket Tools" width="300" />
 
 Cricket Tools is a real-time, multi-user web app for audio scoring on mobile devices.
 
@@ -244,3 +244,10 @@ Use `public/conductor-control.js` to control the Conductor from Max via Node for
 
 ## License
 MIT
+
+## Steps to push changes to GitHub 
+cd /Users/pedrogonzalez/Desktop/Cricket-Tools
+git status -sb           # quick sanity check
+git add -A               # stage all changes (adds, mods, deletions)
+git commit -m "Sync local changes"
+git push origin main     # swap main if you’re on a different branch
