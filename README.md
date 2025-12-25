@@ -14,7 +14,7 @@ A **Conductor** controls parameters for multiple **Players**. Players see a pers
 - [Running in production](#running-in-production)
 - [Docker](#docker)
 - [Usage](#usage)
-  - [Live Play (real-time synth score)](#live-play-real-time-synth-score)
+  - [Live Play (real-time audio score creation)](#live-play-real-time-score-creation)
   - [MP3 Sync (synchronized playback)](#mp3-sync-synchronized-playback)
 - [External control](#external-control)
   - [OSC (UDP)](#osc-udp)
