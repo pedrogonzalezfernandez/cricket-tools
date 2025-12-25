@@ -2,7 +2,7 @@
 
 <img src="client/public/favicon.png" alt="Cricket Tools" width="200" />
 
-Cricket Tools is a real-time, multi-user **conductor/player** web app for audio scoring on mobile devices.
+Cricket Tools is a real-time, multi-user web app for audio scoring on mobile devices.
 
 A **Conductor** controls parameters for multiple **Players**. Players see a personalized visual score and hear synchronized audio.
 
