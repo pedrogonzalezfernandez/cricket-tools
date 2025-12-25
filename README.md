@@ -1,6 +1,6 @@
 # Cricket Tools
 
-<img src="client/public/favicon.png" alt="Cricket Tools" width="200" />
+<img src="client/public/favicon.png" alt="Cricket Tools" width="400" />
 
 Cricket Tools is a real-time, multi-user web app for audio scoring on mobile devices.
 
