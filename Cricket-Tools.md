@@ -112,7 +112,7 @@ Send OSC to `127.0.0.1:9000` (UDP)
 For controlling the conductor from Max/MSP over the internet (when the app is hosted on Replit), use Node for Max with WebSocket:
 
 ### Setup
-1. Download the script: `https://your-app-url.replit.app/public/conductor-control.js`
+1. Download the script: `Cricket-Tools/public/conductor-control.js`
 2. Place it in your Max project folder
 3. Run `npm install socket.io-client` in that folder
 4. In Max, create `[node.script conductor-control.js]`

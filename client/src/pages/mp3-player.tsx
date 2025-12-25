@@ -371,7 +371,7 @@ export default function Mp3Player() {
                     </div>
                   ) : (
                     <span className="text-muted-foreground" data-testid="text-status-idle">
-                      {isReady ? "Ready - waiting for conductor" : "Waiting for file..."}
+                      {isReady ? "Ready - waiting for conductor" : ""}
                     </span>
                   )}
                 </div>
