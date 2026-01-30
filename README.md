@@ -11,13 +11,13 @@ Cricket Tools is a real-time, multi-user web app for audio scoring on mobile dev
 - Two roles per tool:
   - **Conductor**
   - **Player**
-- Real-time updates via **Socket.IO**, including basic clock sync for aligned playback
-- Audio synthesis and timing using **Tone.js**
-- Optional external control via **OSC over UDP** and a **Node for Max** script
+Real-time updates via Socket.IO, including basic clock sync for aligned playback
+Audio synthesis and timing using Tone.js
+Optional external control via OSC over UDP and a Node for Max script
 
 ## How does it work?
-Players connect from phones/tablets/laptops and join as **Player**.
-A Conductor joins as **Conductor** and changes parameters in real time.
+Players connect from phones/tablets/laptops and join as Player.
+A Conductor joins as Conductor and changes parameters in real time.
 The server maintains in-memory state and broadcasts updates to connected clients.
 
 ## Tech stack
