@@ -1,7 +1,6 @@
 import { useLocation } from "wouter";
 import { Radio, Music } from "lucide-react";
 import { NavButton } from "@/components/ui/nav-button";
-import cricketToolsLogo from "@assets/CricketTools_1766517253872.png";
 
 export default function Landing() {
   const [, setLocation] = useLocation();
@@ -11,7 +10,7 @@ export default function Landing() {
       <div className="w-full max-w-sm flex flex-col items-center">
         <div className="text-center mb-12">
           <img 
-            src={cricketToolsLogo} 
+            src="/favicon.png"
             alt="Cricket Tools" 
             className="mx-auto mb-6 w-80 h-auto dark:invert"
             data-testid="img-logo"
